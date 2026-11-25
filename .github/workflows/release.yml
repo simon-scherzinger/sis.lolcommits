@@ -1,4 +1,4 @@
-# Builds lolcommits.app (macOS universal, signed + notarized when the Apple
+# Builds lolcommits.app (macOS Apple Silicon, signed + notarized when the Apple
 # secrets are set) and Linux packages for every version tag like 0.3.0, plus
 # the signed update archives and latest.json the app's updater reads.
 name: release
@@ -29,7 +29,7 @@ jobs:
           [ -s notes.md ] || echo "See CHANGELOG.md." > notes.md
           # links to repo files like (PRIVACY.md) need the full URL on the release page
           sed -i -E "s#\]\(([A-Za-z0-9_./-]+\.md)\)#](https://github.com/$GITHUB_REPOSITORY/blob/$V/\1)#g" notes.md
-          printf '\n**Download:** the `.dmg` for macOS (Apple Silicon and Intel), the `.AppImage` or `.deb` for Linux. Open it and follow the setup.\n' >> notes.md
+          printf '\n**Download:** the `.dmg` for macOS (Apple Silicon), the `.AppImage` or `.deb` for Linux. Open it and follow the setup.\n' >> notes.md
           gh release create "$V" --draft --verify-tag --title "lolcommits $V" --notes-file notes.md
           # the release list lags behind right after creating, so ask for this one, with retries
           for i in 1 2 3 4 5; do
@@ -48,8 +48,8 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            args: --target universal-apple-darwin --config src-tauri/tauri.updater.conf.json
-            rust_targets: aarch64-apple-darwin,x86_64-apple-darwin
+            args: --target aarch64-apple-darwin --config src-tauri/tauri.updater.conf.json
+            rust_targets: aarch64-apple-darwin
           - os: ubuntu-22.04
             args: --config src-tauri/tauri.updater.conf.json
             rust_targets: ''
@@ -132,7 +132,7 @@ jobs:
           APPLE_TEAM_ID: MAMAYY5H8H
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          dmg=$(ls app/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
+          dmg=$(ls app/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg)
           xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
           xcrun stapler staple "$dmg"
           [ "$GITHUB_REF_TYPE" != tag ] || gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber
