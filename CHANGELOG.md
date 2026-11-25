@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+
+- **Download without warning:** the `.dmg` itself is now notarized too, not only the app inside, so macOS opens a downloaded disk image without asking.
+- **First update through the app:** if you have 0.4.0, the menu bar offers "Update to 0.4.1 and restart". Nothing else changes in the app.
+
 ## 0.4.0
 
 First public release, as a menu bar app. (0.3.0 was tagged but never published.)

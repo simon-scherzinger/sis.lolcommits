@@ -1,6 +1,6 @@
 [package]
 name = "lolcommits-app"
-version = "0.4.0"
+version = "0.4.1"
 description = "A selfie for every git commit"
 edition = "2021"
 publish = false

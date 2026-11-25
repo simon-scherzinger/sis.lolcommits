@@ -4,7 +4,7 @@
 # Runs on macOS (avfoundation) and Linux (v4l2).
 set -u
 
-VERSION="0.4.0"
+VERSION="0.4.1"
 LOLDIR="${LOLCOMMITS_DIR:-$(git config --get lolcommits.dir 2>/dev/null || echo "$HOME/.lolcommits")}"
 LOLDIR="${LOLDIR/#\~/$HOME}"
 INDEX="$LOLDIR/index.tsv"
