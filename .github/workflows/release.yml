@@ -123,3 +123,14 @@ jobs:
           projectPath: app
           releaseId: ${{ needs.release.outputs.id }}
           args: ${{ matrix.args }}
+
+      - name: Notarize the dmg
+        # tauri notarizes the app inside, not the disk image around it
+        if: runner.os == 'macOS' && env.HAS_APPLE_CERT == 'true' && github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dmg=$(ls app/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
+          xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple "$dmg"
+          gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber
