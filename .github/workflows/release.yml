@@ -69,9 +69,12 @@ jobs:
         with:
           targets: ${{ matrix.rust_targets }}
 
+      # restores the cache ci.yml saves on main; tag caches are useless to later tags
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri
+          shared-key: tauri
+          save-if: false
 
       - name: Linux build dependencies
         if: runner.os == 'Linux'
