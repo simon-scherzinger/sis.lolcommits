@@ -82,23 +82,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libclang-dev libv4l-dev
 
-      - name: Apple signing and notarization
+      - name: Apple signing
         # only when the secrets exist; otherwise the build is unsigned.
+        # No APPLE_ID here: tauri would notarize the .app, and the dmg step below covers it.
         # Secrets come in via env, so no value is pasted into the script.
         if: runner.os == 'macOS' && env.HAS_APPLE_CERT == 'true'
         env:
           CERT: ${{ secrets.APPLE_CERTIFICATE }}
           CERT_PW: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          ID: ${{ secrets.APPLE_ID }}
-          PW: ${{ secrets.APPLE_PASSWORD }}
         run: |
           {
             echo "APPLE_CERTIFICATE=$CERT"
             echo "APPLE_CERTIFICATE_PASSWORD=$CERT_PW"
             echo "APPLE_SIGNING_IDENTITY=Developer ID Application: entrecode GmbH (MAMAYY5H8H)"
-            echo "APPLE_ID=$ID"
-            echo "APPLE_PASSWORD=$PW"
-            echo "APPLE_TEAM_ID=MAMAYY5H8H"
           } >> "$GITHUB_ENV"
 
       - name: Install
@@ -128,12 +124,15 @@ jobs:
           args: ${{ matrix.args }}
 
       - name: Notarize the dmg
-        # tauri notarizes the app inside, not the disk image around it
-        if: runner.os == 'macOS' && env.HAS_APPLE_CERT == 'true' && github.ref_type == 'tag'
+        # one submission covers the dmg and the app inside it
+        if: runner.os == 'macOS' && env.HAS_APPLE_CERT == 'true'
         env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: MAMAYY5H8H
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           dmg=$(ls app/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
           xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
           xcrun stapler staple "$dmg"
-          gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber
+          [ "$GITHUB_REF_TYPE" != tag ] || gh release upload "$GITHUB_REF_NAME" "$dmg" --clobber
