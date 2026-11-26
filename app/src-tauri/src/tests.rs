@@ -83,6 +83,13 @@ fn full_flow() {
     assert_eq!(team.iter().filter(|r| r.repo == "repo").count(), 1);
     assert!(store::shots().iter().all(|s| s.shared));
 
+    // same day: the most recently shared picture comes first, not the folder order ("repo" > "other-repos")
+    let first_jpg = target.join("other-repos").join(other.iter().find(|f| f.ends_with(".jpg")).unwrap());
+    let later = std::time::SystemTime::now() + std::time::Duration::from_secs(60);
+    fs::File::options().write(true).open(&first_jpg).unwrap().set_modified(later).unwrap();
+    let order: Vec<_> = share::team().unwrap().into_iter().map(|r| r.subject).collect();
+    assert_eq!(order, ["first: tabs and stuff", "second"]);
+
     // a teammate's picture in the same folder is not mine and survives my unshare-all
     fs::write(target.join("repo/20261124-kim-0000abcd.jpg"), fs::read(&a.file).unwrap()).unwrap();
     fs::write(target.join("repo/20261124-kim-0000abcd.tsv"), "2026-11-24\tKim\trepo\tship it\n").unwrap();

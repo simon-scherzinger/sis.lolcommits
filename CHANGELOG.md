@@ -9,6 +9,7 @@
 - **Filters stay in reach:** in My shots and Team the search and filter bar sticks under the top bar while you scroll. In the setup assistant and in dialogs, the Back/Next and Cancel/Close buttons stay visible on small windows.
 - **Warm-up slider** in the app's style instead of the blue system slider.
 - **Compact toolbars on narrow windows:** below 900 px the toolbar buttons show only their icon, with the label as a tooltip, so the bar stays on one line.
+- **Team gallery in order:** pictures from the same day are sorted with the most recently shared first. Before, they were in effect sorted by repo folder and a random part of the file name. Still no time of day is stored or shown.
 - **Only deleting is red:** confirmations like "Show name" or "Share every photo automatically" use the normal button.
 
 ## 0.5.3

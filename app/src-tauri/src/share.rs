@@ -332,6 +332,9 @@ pub struct TeamRow {
     pub subject: String,
     pub file: String,
     pub mine: bool,
+    /// When the picture was shared (file time), only to order pictures of the same day; never shown.
+    #[serde(skip)]
+    shared_at: std::time::SystemTime,
 }
 
 /// Folder to read team pictures from: the target itself for folders,
@@ -371,10 +374,12 @@ pub fn team() -> Result<Vec<TeamRow>, String> {
                 subject: r[3].clone(),
                 file: img.to_string_lossy().to_string(),
                 mine: parse_name(&format!("{file}.jpg")).map(|(_, p)| p == me).unwrap_or(false),
+                shared_at: fs::metadata(&img).and_then(|m| m.modified()).unwrap_or(std::time::UNIX_EPOCH),
             });
         }
     }
-    rows.sort_by(|a, b| (&b.date, &b.file).cmp(&(&a.date, &a.file)));
+    // Newest day first; within a day the most recently shared first (the sidecar has no time of day).
+    rows.sort_by(|a, b| (&b.date, b.shared_at, &b.file).cmp(&(&a.date, a.shared_at, &a.file)));
     Ok(rows)
 }
 
