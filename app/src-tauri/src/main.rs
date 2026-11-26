@@ -25,7 +25,10 @@ type R<T> = Result<T, String>;
 
 /// Settings the UI may change directly. Share targets only change through the
 /// setup commands below, which test the connection first.
-const KEYS: [&str; 7] = ["device", "delay", "retention", "share.name", "share.retention", "share.auto", "update.auto"];
+const KEYS: [&str; 9] = [
+    "device", "delay", "retention", "share.name", "share.retention", "share.auto", "update.auto",
+    "share.googleClientId", "share.googleClientSecret",
+];
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -352,12 +355,14 @@ struct RcloneStatus {
     installed: bool,
     connected: bool,
     brew: bool,
+    /// Google client for the sign-in: "own", "builtin" or "none"
+    client: &'static str,
 }
 
 #[tauri::command(async)]
 fn rclone_status() -> RcloneStatus {
     let installed = drive::rclone_installed();
-    RcloneStatus { installed, connected: installed && drive::remote_exists(), brew: config::which("brew").is_some() }
+    RcloneStatus { installed, connected: installed && drive::signed_in(), brew: config::which("brew").is_some(), client: drive::client_source() }
 }
 
 #[tauri::command(async)]
@@ -380,11 +385,16 @@ fn rclone_connect() -> R<Vec<drive::SharedDrive>> {
 }
 
 #[tauri::command(async)]
+fn rclone_cancel() {
+    drive::cancel_login()
+}
+
+#[tauri::command(async)]
 fn rclone_use(app: AppHandle, id: String, name: String) -> R<()> {
-    let target = drive::use_shared_drive(&id)?;
+    let target = drive::target_for(&id);
     let t = share::Target::Rclone(target.trim_start_matches("rclone:").to_string());
     share::probe(&t)?;
-    set_target(&app, &target, &format!("Google Drive › {name}"))
+    set_target(&app, &target, &format!("Google Drive › {name} › lolcommits"))
 }
 
 /// Stop sharing from this computer. Pictures already in the team folder stay.

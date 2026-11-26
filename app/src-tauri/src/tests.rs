@@ -159,6 +159,14 @@ fn parses_rclone_drives() {
 }
 
 #[test]
+fn reads_the_token_from_rclone_authorize() {
+    let out = "Paste the following into your remote machine --->\n{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2026-11-26T09:00:00+01:00\"}\n<---End paste\n";
+    assert_eq!(drive::token_from(out).unwrap(), r#"{"access_token":"a","token_type":"Bearer","refresh_token":"r","expiry":"2026-11-26T09:00:00+01:00"}"#);
+    assert!(drive::token_from("Failed to get token").is_none());
+    assert_eq!(drive::target_for("0AB"), "rclone:lolcommits-gdrive,team_drive=0AB:lolcommits");
+}
+
+#[test]
 fn repo_folder_names_are_safe() {
     assert_eq!(share::repo_folder("sis.lolcommits"), "sis.lolcommits");
     assert_eq!(share::repo_folder(".hidden"), "hidden");

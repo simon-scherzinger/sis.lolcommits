@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>lolcommits – {{ if .OK }}signed in{{ else }}sign-in failed{{ end }}</title>
+<style>
+:root{--bg:#f5f4f0;--fg:#17171a;--mut:#6c6c72;--card:#fff;--line:#0000001a;--acc:#ffd60a;--bad:#d93025;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#141416;--fg:#f1f1f3;--mut:#9b9ba3;--card:#1e1e21;--line:#ffffff1a;color-scheme:dark}}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif}
+main{min-height:100%;display:grid;place-items:center;padding:24px;box-sizing:border-box}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:32px 36px;max-width:460px;text-align:center}
+.icon{width:88px;height:88px;border-radius:22px;background:var(--acc);display:grid;place-items:center;margin:0 auto 18px}
+h1{font-family:Impact,"Anton","Arial Narrow Bold",sans-serif;font-weight:400;font-size:40px;line-height:1.05;margin:0 0 10px;letter-spacing:.3px}
+p{color:var(--mut);margin:0 0 8px}
+.err{color:var(--bad);font-size:13px;margin-top:14px;word-break:break-word}
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <div class="icon"><svg width="54" height="54" viewBox="0 0 44 44" fill="#17171a"><path d="M9 13h26a5 5 0 0 1 5 5v14a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V18a5 5 0 0 1 5-5zm8-4h8a2 2 0 0 1 2 2v2H15v-2a2 2 0 0 1 2-2z"/><circle cx="22" cy="25" r="9" fill="#ffd60a"/><circle cx="22" cy="25" r="6"/></svg></div>
+    {{ if .OK }}
+    <h1>you're signed in</h1>
+    <p>Go back to lolcommits and pick your shared drive.</p>
+    <p>You can close this tab.</p>
+    {{ else }}
+    <h1>that didn't work</h1>
+    <p>Go back to lolcommits and try “Sign in with Google” again.</p>
+    <div class="err">{{ .Name }}{{ if .Description }} – {{ .Description }}{{ end }}</div>
+    {{ end }}
+  </div>
+</main>
+</body>
+</html>

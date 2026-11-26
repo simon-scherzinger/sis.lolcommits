@@ -308,7 +308,7 @@ cmd_doctor() {
   case "$(share_mode)" in
     off) info "share:  off" ;;
     rclone)
-      local remote; remote="$(share_base)"; remote="${remote%%:*}:"
+      local remote; remote="$(share_base)"; remote="${remote%%:*}"; remote="${remote%%,*}:"   # name[,options]:path
       if ! command -v rclone >/dev/null 2>&1; then info "share:  ✗ rclone missing (brew/apt install rclone)"; ok=0
       elif ! rclone listremotes 2>/dev/null | grep -qxF "$remote"; then info "share:  ✗ rclone remote $remote not configured (run: rclone config)"; ok=0
       else info "share:  $(cfg share.target) (rclone $(rclone version 2>/dev/null | head -1 | awk '{print $2}'))"; fi ;;

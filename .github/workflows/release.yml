@@ -118,6 +118,10 @@ jobs:
           # signs the update archives; the app checks them against the pubkey in tauri.conf.json
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Google sign-in: entrecode's OAuth client ("Desktop app", Internal), built into the app.
+          # Without the secrets the build works too, then teams enter their own client in the setup.
+          LOLCOMMITS_GDRIVE_CLIENT_ID: ${{ secrets.LOLCOMMITS_GDRIVE_CLIENT_ID }}
+          LOLCOMMITS_GDRIVE_CLIENT_SECRET: ${{ secrets.LOLCOMMITS_GDRIVE_CLIENT_SECRET }}
         with:
           projectPath: app
           releaseId: ${{ needs.release.outputs.id }}
