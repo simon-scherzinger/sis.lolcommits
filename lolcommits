@@ -176,7 +176,8 @@ render() {
   while [ $# -gt 0 ]; do a="$1"; shift; [ "$a" = "--" ] && break; args+=("$a"); done
   local out="$1" sha="$2" subject="$3" repo="$4" branch="$5"
   local tmp; tmp="$(mktemp -d)"
-  printf '%s' "$subject" | fold -s -w 34 | head -4 >"$tmp/msg.txt"
+  # at most 2 lines across the picture, "…" if the message is longer
+  printf '%s' "$subject" | fold -s -w 56 | awk 'NR<=2{sub(/ +$/,""); l[NR]=$0} END{if(NR>2){sub(/[ ,.:;-]*$/,"",l[2]); l[2]=l[2] "…"} for(i=1;i<=NR&&i<=2;i++) print l[i]}' >"$tmp/msg.txt"
   printf '%s' "$sha" >"$tmp/sha.txt"
   printf '%s · %s' "$repo" "$branch" >"$tmp/repo.txt"
   local font; font="$(font_file)"

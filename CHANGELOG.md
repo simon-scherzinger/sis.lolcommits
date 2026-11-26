@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Commit message across the picture:** at most two lines that use the full width; longer messages end with "…". Before, it was up to four narrow lines in the middle.
+
 ## 0.5.1
 
 - **Update menu shows the right version:** the app checks for updates every hour instead of every six, and while updating it shows the version it is really installing. Before, the menu could still offer an older version (e.g. "Update to 0.4.2") although the newest one got installed.
