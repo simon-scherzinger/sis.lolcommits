@@ -41,7 +41,6 @@ fn git(args: &[&str]) -> Result<String, String> {
     }
 }
 
-/// All lolcommits.* keys, lower-cased the way git reports them (e.g. `pauseduntil`).
 // ---- cached read of the global git config
 // Every setting (and lol_dir(), behind nearly every file path) used to spawn
 // `git config`, ~15 ms each and a dozen per window refresh. Now the whole
@@ -99,6 +98,7 @@ fn global_get(key: &str) -> Option<String> {
     entries().into_iter().rev().find(|(k, _)| k.to_lowercase() == key).map(|(_, v)| v)
 }
 
+/// All lolcommits.* keys, lower-cased the way git reports them (e.g. `pauseduntil`).
 pub fn all() -> HashMap<String, String> {
     let mut m = HashMap::new();
     for (k, v) in entries() {

@@ -6,6 +6,8 @@ use nokhwa::pixel_format::RgbFormat;
 use nokhwa::utils::{ApiBackend, CameraIndex, RequestedFormat, RequestedFormatType};
 use nokhwa::Camera;
 use serde::Serialize;
+#[cfg(target_os = "macos")]
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
@@ -44,6 +46,12 @@ pub fn request_permission() -> bool {
     }
 }
 
+/// Remembered "yes" of permission_granted(). Every photo asks macOS again
+/// (grab_native), so a permission taken back in System Settings gets the
+/// clear message instead of a bare camera error.
+#[cfg(target_os = "macos")]
+static GRANTED: AtomicBool = AtomicBool::new(false);
+
 pub fn permission_granted() -> bool {
     if test_mode() {
         return true;
@@ -52,8 +60,6 @@ pub fn permission_granted() -> bool {
     {
         // ~50 ms per check and asked on every window refresh. A "yes" is
         // remembered; a "no" is asked again, so allowing it later shows up.
-        use std::sync::atomic::{AtomicBool, Ordering};
-        static GRANTED: AtomicBool = AtomicBool::new(false);
         if GRANTED.load(Ordering::Relaxed) {
             return true;
         }
@@ -106,6 +112,8 @@ pub fn grab() -> Result<RgbImage, String> {
 }
 
 fn grab_native() -> Result<RgbImage, String> {
+    #[cfg(target_os = "macos")]
+    GRANTED.store(false, Ordering::Relaxed);
     if !permission_granted() {
         return Err("no camera permission – allow lolcommits in System Settings › Privacy & Security › Camera".into());
     }
