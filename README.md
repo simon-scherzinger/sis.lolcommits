@@ -23,7 +23,7 @@ Remake of the old [lolcommits](https://github.com/lolcommits/lolcommits) Ruby ge
 3. Commit something.
 
 On **Linux** use the `.AppImage` or `.deb` from the release.
-Without Google Drive for desktop, "Sign in with Google" works through [rclone](https://rclone.org), and the app offers to install it.
+Without Google Drive for desktop, "Sign in with Google" works through [rclone](https://rclone.org) (the app offers to install it) and needs a Google client of your company ([details](#google-sign-in-without-drive-for-desktop)).
 
 **With Claude Code:** tell it
 
@@ -38,7 +38,7 @@ Use a shared drive rather than someone's My Drive, so the pictures belong to the
 
 **Setup for each person:** in the app, open Team › Set up team gallery and pick the shared drive.
 - **With Google Drive for desktop:** its shared drives show up right away, with no sign-in.
-- **Without it:** "Sign in with Google" opens the browser. If your Workspace blocks rclone's sign-in, an admin has to allow it ([rclone docs](https://rclone.org/drive/#making-your-own-client-id)).
+- **Without it:** "Sign in with Google" opens the browser, then you pick the shared drive. This needs a Google client of your company, see below.
 
 **Review:** new photos land in the Review tab (the menu bar shows "Review N new photos…").
 Each card shows the picture exactly as it would be uploaded.
@@ -59,6 +59,23 @@ You can change the choice per repo in Settings. It applies to pictures you share
 Files are named `<date>-<person>-<random>`, so several people can share into the same folder without conflicts.
 Shared pictures stay until you take them back, unless you set an expiry in Settings.
 Your team should agree on a period, see [PRIVACY.md](PRIVACY.md).
+
+### Google sign-in without Drive for desktop
+
+Google Drive for desktop is the easiest way: no sign-in in lolcommits, nothing to set up.
+
+Without it, lolcommits signs in to Google Drive through rclone with an OAuth client of your company.
+rclone's own shared client no longer works (Google retired it in 2026).
+- **entrecode:** the app from the releases has entrecode's client built in. Just sign in.
+- **Other teams:** a Google Workspace admin creates a client once and shares ID and secret with the team. Everyone enters them in the setup ("Use our own client…").
+
+Creating the client (about 10 minutes, in the [Google Cloud console](https://console.cloud.google.com)):
+1. Create a project, e.g. "lolcommits", in your organization.
+2. APIs & Services › Library: enable the **Google Drive API**.
+3. Google Auth Platform › Audience: user type **Internal**. Only accounts of your organization can sign in, and Google doesn't need to review the app.
+4. Google Auth Platform › Clients › Create client: type **Desktop app**, name "lolcommits". Copy the client ID and secret.
+
+The secret of a desktop client isn't confidential ([Google](https://developers.google.com/identity/protocols/oauth2/native-app)), so sharing it in the team chat is fine. With "Internal" it only works for your organization.
 
 ### Privacy
 
@@ -97,6 +114,7 @@ lolcommits ui                # open the app
 
 - **Skip one commit:** `LOLCOMMITS_SKIP=1 git commit …`
 - **Pause in one repo:** `git config lolcommits.enabled false`
+- **Only work repos:** `git config --global --add lolcommits.folders ~/Developer` takes photos only in repos below that folder (add several; none set: every repo). In the app: Settings › Capture › Only in these folders.
 - **With the app installed:** the hook only queues a job in `~/.lolcommits/queue/`. The app takes the photo.
 
 ### Config
@@ -109,11 +127,13 @@ Everything is plain git config, shared by the app and the command line:
 | `lolcommits.delay` | `1.5` | seconds of camera warm-up |
 | `lolcommits.dir` | `~/.lolcommits` | where pictures go |
 | `lolcommits.enabled` | `true` | `false` pauses without removing the hook |
+| `lolcommits.folders` | – (all) | photos only in repos below these folders, multi-valued (`--add`) |
 | `lolcommits.pausedUntil` | – | unix time, set by "Pause" in the menu bar |
 | `lolcommits.retention` | keep | delete local pictures after N days |
 | `lolcommits.share.target` | off | a folder (Drive for desktop, NAS) or `rclone:<remote>:<path>` |
 | `lolcommits.share.name` | – | your name in the gallery, also the folder name |
 | `lolcommits.share.retention` | `0` (keep) | delete your shared pictures after N days |
+| `lolcommits.share.googleClientId` / `…Secret` | – | your team's Google OAuth client for "Sign in with Google" |
 | `lolcommits.share.auto` | `false` | upload every photo without review (repos not asked yet stay hidden) |
 | `lolcommits.update.auto` | `true` | look for app updates on GitHub every few hours |
 
@@ -141,6 +161,7 @@ npm run build        # lolcommits.app + dmg in src-tauri/target/release/bundle
 - **Signing:** with the Developer ID of entrecode GmbH (team `MAMAYY5H8H`, set in the workflow). Needs the secrets `APPLE_CERTIFICATE` (the .p12 as base64), `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID` and `APPLE_PASSWORD` (app-specific password).
 - **Signed build on your Mac:** `APPLE_SIGNING_IDENTITY="Developer ID Application: entrecode GmbH (MAMAYY5H8H)" npm run build`, the certificate must be in your keychain.
 - **Without them:** the build is unsigned.
+- **Google client:** the secrets `LOLCOMMITS_GDRIVE_CLIENT_ID` and `LOLCOMMITS_GDRIVE_CLIENT_SECRET` (entrecode's "Desktop app" client, Internal) are built into the app. For a local build or test, set the same environment variables.
 - **Updates:** CI also builds signed update archives and `latest.json`, which the app reads from the latest release. They need the secrets `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. The public key is in `tauri.conf.json`. Drafts don't count as latest, so an update reaches users once the release is published.
 - **Test an update locally:** `LOLCOMMITS_UPDATE_URL=http://…/latest.json` points the app at another manifest and checks after 3 seconds (http only with `dangerousInsecureTransportProtocol` in a test build).
 - **Version:** keep `version` in `app/src-tauri/tauri.conf.json` in line with the tag.

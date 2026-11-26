@@ -60,7 +60,7 @@ Don't click through it for them.
 
 Tell the user:
 - lolcommits lives in the menu bar. The icon flashes when it takes a photo, and its menu has pause, test photo and share.
-- For the team gallery, a Google shared drive (e.g. "lolcommits") with the team as members is enough. With Google Drive for desktop, no sign-in is needed.
+- For the team gallery, a Google shared drive (e.g. "lolcommits") with the team as members is enough. With Google Drive for desktop, no sign-in is needed. Without it, "Sign in with Google" needs a Google client of the company (built in for entrecode; others see the README section "Google sign-in without Drive for desktop").
 - In a company: read [PRIVACY.md](PRIVACY.md) before sharing.
 
 ## Command line only (no app)

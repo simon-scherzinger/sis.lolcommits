@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.5.0
+
+Feedback from the first teammates.
+
+- **Only your work repos:** Settings › Capture › "Only in these folders" takes photos only in repos inside the folders you pick, e.g. your work folder but not your experiments.
+- **Select several pictures:** "Select" in My shots, or ⌘-click / ⇧-click, then delete or unshare them together, with progress.
+- **Right-click a picture:** open, share or unshare, copy the commit message, show in Finder, delete. The browser menu ("Look Up", "Download Image") is gone.
+- **You see what's happening:** every button shows a spinner while it works and can't be clicked twice. Deleting keeps its dialog open until it's done. Taking a picture back from Google Drive is about twice as fast.
+- **Google sign-in, faster and without asking twice:** lolcommits now signs in with its own Google client instead of rclone's shared one, which Google throttled and retired in 2026. Teams outside entrecode enter their company's client once in the setup ([how](README.md#google-sign-in-without-drive-for-desktop)); Google Drive for desktop still needs nothing.
+  - After the sign-in the browser shows a lolcommits page instead of rclone's plain text.
+  - Switching to another shared drive no longer asks Google again, and an existing sign-in is reused.
+  - Cancel any time; it gives up after 5 minutes.
+  - The setup says that pictures go to a folder "lolcommits" inside the shared drive, and the label shows it (e.g. "Google Drive › Team › lolcommits").
+- **Review doesn't wait for uploads:** swiping right uploads in the background, the next card is there at once. Picture and sidecar go up in one call.
+- **Calmer look:** cards use the full width, no drop shadows, all controls in a toolbar are the same height, the year for Wrapped is only asked when there is more than one.
+- **Dates in English:** "25 Nov 2026, 21:55" and "Thu 06:00" instead of the system language mixed into the English interface.
+- **Paused:** shown once (banner) instead of banner plus badge; the menu bar icon is dimmed while paused.
+- **A normal window:** while the window is open, lolcommits is in the Dock and in ⌘-Tab. ⌘Q closes the window and photos keep coming; quit from the menu bar menu.
+- **Privacy guide** and every tab open at the top.
+- **Apple Silicon only:** the Mac download no longer includes Intel code, so it's smaller and builds faster.
+
 ## 0.4.2
 
 - **Team gallery setup for everyone:** setting up a shared drive no longer fails with "can't write there … File not found" if you aren't a manager of the shared drive. Content managers are enough; if your role is too low, the app says so.
