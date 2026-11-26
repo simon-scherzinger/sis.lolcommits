@@ -124,6 +124,23 @@ fn put(t: &Target, src: &Path, rel: &str) -> Result<(), String> {
     }
 }
 
+/// Picture and sidecar to <stem>.jpg / <stem>.tsv. On rclone one call for
+/// both: one sign-in, the folder created once, both files in parallel.
+fn put_pair(t: &Target, img: &Path, side: &Path, stem: &str) -> Result<(), String> {
+    let Target::Rclone(base) = t else {
+        return put(t, img, &format!("{stem}.jpg")).and_then(|_| put(t, side, &format!("{stem}.tsv")));
+    };
+    let (folder, name) = stem.rsplit_once('/').unwrap_or(("", stem));
+    let dir = tmp_file(&format!("up-{:08x}", rand::thread_rng().gen::<u32>()));
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let res = fs::copy(img, dir.join(format!("{name}.jpg")))
+        .and_then(|_| fs::copy(side, dir.join(format!("{name}.tsv"))))
+        .map_err(|e| e.to_string())
+        .and_then(|_| rclone(&["copy", dir.to_str().unwrap(), &format!("{base}/{folder}")]).map(|_| ()));
+    let _ = fs::remove_dir_all(&dir);
+    res
+}
+
 fn rm(t: &Target, rel: &str) -> Result<(), String> {
     match t {
         Target::Folder(base) => {
@@ -252,11 +269,11 @@ pub fn upload(shot: &Shot) -> Result<(), String> {
     let side = tmp_file("sidecar.tsv");
     fs::write(&side, format!("{}-{}-{}\t{}\t{}\t{}\n", &d[..4], &d[4..6], &d[6..8], name.replace('\t', " "), repo, shot.subject.replace(['\t', '\n'], " ")))
         .map_err(|e| e.to_string())?;
-    let res = put(&t, &img, &format!("{stem}.jpg")).and_then(|_| put(&t, &side, &format!("{stem}.tsv")));
+    let res = put_pair(&t, &img, &side, &stem);
     let _ = fs::remove_file(&img);
     let _ = fs::remove_file(&side);
     if let Err(e) = res {
-        let _ = rm(&t, &format!("{stem}.jpg"));
+        let _ = rm_pair(&t, &stem);
         return Err(e);
     }
     store::add_shared(&shot.file, &format!("{stem}.jpg")).map_err(|e| e.to_string())?;
@@ -274,19 +291,25 @@ fn prune() {
     let cutoff = (chrono::Local::now() - chrono::Duration::days(days)).format("%Y%m%d").to_string();
     for (date, stem) in mine(&t, &me).unwrap_or_default() {
         if date < cutoff {
-            let _ = rm(&t, &format!("{stem}.jpg"));
-            let _ = rm(&t, &format!("{stem}.tsv"));
+            let _ = rm_pair(&t, &stem);
             let _ = store::remove_shared(|_, r| r == format!("{stem}.jpg"));
         }
     }
 }
 
+/// Picture and sidecar at once: on Drive each delete is a round trip.
+fn rm_pair(t: &Target, stem: &str) -> Result<(), String> {
+    let (jpg, tsv) = std::thread::scope(|s| {
+        let tsv = s.spawn(|| rm(t, &format!("{stem}.tsv")));
+        (rm(t, &format!("{stem}.jpg")), tsv.join().unwrap_or_else(|_| Err("delete failed".into())))
+    });
+    jpg.and(tsv)
+}
+
 pub fn unshare(file: &str) -> Result<(), String> {
     let t = target()?;
     let rel = store::shared_rows().into_iter().find(|(l, _)| l == file).map(|r| r.1).ok_or("this picture is not shared")?;
-    let stem = rel.trim_end_matches(".jpg");
-    rm(&t, &format!("{stem}.jpg"))?;
-    rm(&t, &format!("{stem}.tsv"))?;
+    rm_pair(&t, rel.trim_end_matches(".jpg"))?;
     store::remove_shared(|l, _| l == file).map_err(|e| e.to_string())
 }
 
@@ -295,8 +318,7 @@ pub fn unshare_all() -> Result<(), String> {
     let t = target()?;
     let (_, me) = me()?;
     for (_, stem) in mine(&t, &me)? {
-        rm(&t, &format!("{stem}.jpg"))?;
-        rm(&t, &format!("{stem}.tsv"))?;
+        rm_pair(&t, &stem)?;
     }
     let _ = fs::remove_file(store::shared_path());
     Ok(())
