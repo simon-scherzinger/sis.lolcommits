@@ -24,27 +24,33 @@ pub fn fit(img: RgbImage) -> RgbImage {
     imageops::crop_imm(&scaled, (scaled.width() - W) / 2, (scaled.height() - H) / 2, W, H).to_image()
 }
 
-/// Word-wrap at about `width` characters, at most `max` lines.
-fn wrap(text: &str, width: usize, max: usize) -> Vec<String> {
+/// Word-wrap so every line is at most `max_w` pixels wide at `size`, at most
+/// `max` lines. If the text doesn't fit, the last line ends with "…".
+fn wrap(text: &str, size: f32, max_w: i32, max: usize) -> Vec<String> {
+    let fits = |s: &str| measure(size, s).0 <= max_w;
+    let words: Vec<&str> = text.split_whitespace().collect();
     let mut lines: Vec<String> = Vec::new();
-    let mut cur = String::new();
-    for word in text.split_whitespace() {
-        if !cur.is_empty() && cur.chars().count() + 1 + word.chars().count() > width {
-            lines.push(std::mem::take(&mut cur));
+    let mut i = 0;
+    while i < words.len() && lines.len() < max {
+        let mut cur = words[i].to_string();
+        i += 1;
+        while i < words.len() && fits(&format!("{cur} {}", words[i])) {
+            cur = format!("{cur} {}", words[i]);
+            i += 1;
         }
-        if !cur.is_empty() {
-            cur.push(' ');
-        }
-        cur.push_str(word);
-    }
-    if !cur.is_empty() {
         lines.push(cur);
     }
-    if lines.len() > max {
-        lines.truncate(max);
-        if let Some(l) = lines.last_mut() {
-            l.push('…');
+    let cut = i < words.len() || lines.last().is_some_and(|l| !fits(l));
+    if let Some(last) = lines.last_mut().filter(|_| cut) {
+        // drop words, then characters, until "line…" fits
+        let mut t = last.clone();
+        while !fits(&format!("{t}…")) {
+            match t.rfind(' ') {
+                Some(p) if p > 0 => t.truncate(p),
+                _ => { t.pop(); if t.is_empty() { break; } }
+            }
         }
+        *last = format!("{}…", t.trim_end_matches(|c: char| c.is_whitespace() || ",.:;-".contains(c)));
     }
     lines
 }
@@ -80,7 +86,7 @@ pub fn caption(mut img: RgbImage, sha: &str, subject: &str, repo: &str, branch: 
     let (w, h) = (img.width() as i32, img.height() as i32);
     // commit message: big, centered, bottom
     let size = 72.0;
-    let lines = wrap(subject, 30, 4);
+    let lines = wrap(subject, size, w - 2 * 48, 2);
     let line_h = (size * 1.12) as i32;
     let mut y = h - 40 - line_h * lines.len() as i32;
     for l in &lines {
@@ -180,4 +186,29 @@ pub fn contact_sheet(files: &[String]) -> Result<RgbImage, String> {
         }
     }
     Ok(sheet)
+}
+
+#[cfg(test)]
+mod wrap_tests {
+    use super::*;
+
+    #[test]
+    fn two_lines_at_most_with_ellipsis() {
+        let max_w = W as i32 - 96;
+        assert_eq!(wrap("fix typo", 72.0, max_w, 2), vec!["fix typo"]);
+        let long = "feat(argocd): AppProject hector-backends und API-Account admincenter (ONE-6333) plus a lot more words that never fit into two lines at this size, really not";
+        let lines = wrap(long, 72.0, max_w, 2);
+        assert_eq!(lines.len(), 2);
+        assert!(lines[1].ends_with('…'), "{lines:?}");
+        assert!(lines.iter().all(|l| measure(72.0, l).0 <= max_w));
+        let word = wrap(&"x".repeat(200), 72.0, max_w, 2);
+        assert!(word.len() == 1 && word[0].ends_with('…') && measure(72.0, &word[0]).0 <= max_w);
+        // LOLCOMMITS_RENDER_SAMPLES=dir writes example pictures to look at
+        if let Ok(dir) = std::env::var("LOLCOMMITS_RENDER_SAMPLES") {
+            for (i, s) in ["fix typo", "feat(argocd): AppProject hector-backends und API-Account admincenter (ONE-6333)", long].iter().enumerate() {
+                let img = caption(test_pattern(), "f520692079", s, "dsb.argocd", "feat/ONE-6333-argocd-admincenter-api");
+                save_jpeg(&img, &Path::new(&dir).join(format!("sample-{i}.jpg"))).unwrap();
+            }
+        }
+    }
 }

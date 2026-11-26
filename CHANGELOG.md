@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Repo name from git:** pictures are filed under the name of the `origin` remote (e.g. `hec.dsb-layer`), not the folder name, so every git worktree or clone in another folder counts as the same repo. Without a remote it's the main worktree's folder. Pictures taken before stay where they are.
+- **Commit message across the picture:** at most two lines that use the full width; longer messages end with "…". Before, it was up to four narrow lines in the middle.
 
 ## 0.5.1
 
