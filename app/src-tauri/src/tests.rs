@@ -177,6 +177,18 @@ fn full_flow() {
 }
 
 #[test]
+fn outdated_google_sign_in() {
+    // remote without client_id: rclone's shared client, retired by Google in 2026
+    assert!(drive::outdated("", Some("ours.apps.googleusercontent.com")));
+    assert!(drive::outdated("", None), "even without a client to switch to");
+    // made with another client than the one in use now
+    assert!(drive::outdated("old.apps.googleusercontent.com", Some("ours.apps.googleusercontent.com")));
+    assert!(!drive::outdated("ours.apps.googleusercontent.com", Some("ours.apps.googleusercontent.com")));
+    // own client, but this build has none to compare with: nothing to renew
+    assert!(!drive::outdated("ours.apps.googleusercontent.com", None));
+}
+
+#[test]
 fn reads_the_token_from_rclone_authorize() {
     let out = "Paste the following into your remote machine --->\n{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2026-11-26T09:00:00+01:00\"}\n<---End paste\n";
     assert_eq!(drive::token_from(out).unwrap(), r#"{"access_token":"a","token_type":"Bearer","refresh_token":"r","expiry":"2026-11-26T09:00:00+01:00"}"#);

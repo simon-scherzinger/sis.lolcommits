@@ -237,6 +237,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 <main>
   <div class="banner" id="pauseBanner" hidden><svg class="i" aria-hidden="true"><use href="#i-pause"/></svg><span id="pauseText"></span><div class="spacer"></div><button class="btn" data-act="resume">Resume</button></div>
   <div class="banner" id="offBanner" hidden><svg class="i" aria-hidden="true"><use href="#i-power"/></svg><span>lolcommits is off – no photos are taken.</span><div class="spacer"></div><button class="btn primary" data-act="enable">Turn on</button></div>
+  <div class="banner" id="reloginBanner" hidden><svg class="i" aria-hidden="true"><use href="#i-key"/></svg><span>Please sign in to Google again for the team gallery. Your sign-in uses rclone’s shared Google client, which Google turns off in 2026 – sharing would stop working then.</span><div class="spacer"></div><button class="btn primary" data-act="relogin">Sign in again</button></div>
   <div class="banner bad" id="errBanner" hidden><svg class="i" aria-hidden="true"><use href="#i-alert"/></svg><span id="errText"></span><div class="spacer"></div><button class="btn" data-act="setup-team">Change team gallery…</button></div>
 
   <section id="v-shots">
@@ -572,7 +573,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const PRIVACY_URL = "https://github.com/simon-scherzinger/sis.lolcommits/blob/main/PRIVACY.md";
 const CLIENT_HELP_URL = "https://github.com/simon-scherzinger/sis.lolcommits/blob/main/README.md#google-sign-in-without-drive-for-desktop";
-let S = null, TEAM = [], TVIEW = [], view = "shots", list = [], vi = 0, viewerKind = "shots";
+let RELOGIN = false, S = null, TEAM = [], TVIEW = [], view = "shots", list = [], vi = 0, viewerKind = "shots";
 
 const api = (cmd, args) => invoke(cmd, args || {});
 const src = (f, bust) => fileSrc(f) + (bust ? "?v=" + Date.now() : "");
@@ -631,6 +632,7 @@ const pausedText = () => !S.pausedUntil ? "" : S.pausedUntil > 4e12 ? "Paused un
 async function load() {
   const [state, repos] = await Promise.all([api("get_state"), api("repo_choices").catch(() => [])]);
   S = state; S.repos = repos;
+  api("sign_in_outdated").then(v => { RELOGIN = !!v; $("#reloginBanner").hidden = !RELOGIN; measureChrome(); }, () => {});
   renderHeader(); renderShots(); renderSettings(); renderPrivacy(); renderTeamShell(); renderReview();
 }
 function renderHeader() {
@@ -1081,7 +1083,7 @@ document.addEventListener("click", e => {
   const act = a.dataset.act;
   if (act === "resume") busy(a, async () => { await api("resume"); await load(); });
   if (act === "enable") busy(a, async () => { await api("enable_global"); toast("On ✓"); await load(); });
-  if (act === "setup-team") openWizard("team", true);
+  if (act === "setup-team" || act === "relogin") openWizard("team", true);
   if (act === "wizard") openWizard("welcome");
   if (act === "privacy-doc") openPrivacy();
 });
@@ -1362,7 +1364,8 @@ async function wzTeam() {
     h("span", {class: "go"}, "›"))));
   const rc = await api("rclone_status").catch(() => ({}));
   $("#wzGoogle .t").textContent = rc.connected ? "Google account" : "Sign in with Google";
-  $("#wzGoogleD").textContent = rc.connected ? "Already signed in – pick another shared drive."
+  $("#wzGoogleD").textContent = RELOGIN && rc.client !== "none" ? "Sign in again – your current sign-in uses rclone’s retiring Google client. Then pick your shared drive."
+    : rc.connected ? "Already signed in – pick another shared drive."
     : rc.client === "none" ? "Needs a Google client from your admin. Drive for desktop doesn't."
     : !folders.length && S.platform === "macos" ? "Google Drive for desktop isn't installed – sign in here instead."
     : "Opens your browser. Then pick a shared drive.";

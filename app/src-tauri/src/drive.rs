@@ -134,6 +134,31 @@ pub fn signed_in() -> bool {
     remote_exists() && client().map(|(id, _)| id == remote_client_id()).unwrap_or(false)
 }
 
+/// A sign-in is outdated when it wasn't made with the client lolcommits uses
+/// now. An empty client_id means rclone's own shared client (older versions
+/// created the remote that way), which Google retires in 2026.
+pub fn outdated(remote_id: &str, current: Option<&str>) -> bool {
+    remote_id.is_empty() || current.map(|c| c != remote_id).unwrap_or(false)
+}
+
+/// Cached: asking rclone takes ~30 ms and the window state is read often.
+/// Reset by login() and disconnect().
+static OUTDATED: Mutex<Option<bool>> = Mutex::new(None);
+
+/// The team gallery goes through a Google sign-in that needs renewing.
+pub fn sign_in_outdated() -> bool {
+    let mut c = OUTDATED.lock().unwrap_or_else(|e| e.into_inner());
+    *c.get_or_insert_with(|| {
+        matches!(crate::share::target(), Ok(crate::share::Target::Rclone(_)))
+            && remote_exists()
+            && outdated(&remote_client_id(), client().as_ref().map(|(id, _)| id.as_str()))
+    })
+}
+
+pub fn reset_outdated() {
+    *OUTDATED.lock().unwrap_or_else(|e| e.into_inner()) = None;
+}
+
 fn remote_client_id() -> String {
     rclone(&["config", "show", REMOTE])
         .unwrap_or_default()
@@ -222,6 +247,7 @@ fn login() -> Result<(), String> {
         "config_refresh_token=false".into(), "config_change_team_drive=false".into(), "--non-interactive".into(),
     ];
     let refs: Vec<&str> = create.iter().map(String::as_str).collect();
+    reset_outdated();
     let res = rclone(&refs)?;
     match serde_json::from_str::<serde_json::Value>(&res).ok().and_then(|v| v["Error"].as_str().map(String::from)) {
         Some(e) if !e.is_empty() => {
@@ -270,5 +296,6 @@ pub fn target_for(id: &str) -> String {
 }
 
 pub fn disconnect() {
+    reset_outdated();
     let _ = rclone(&["config", "delete", REMOTE]);
 }

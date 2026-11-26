@@ -365,6 +365,7 @@ fn drive_folders() -> Vec<drive::DriveFolder> {
 }
 
 fn set_target(app: &AppHandle, target: &str, label: &str) -> R<()> {
+    drive::reset_outdated();
     config::set("share.target", target)?;
     config::set("share.label", label)?;
     allow_assets(app);
@@ -400,6 +401,14 @@ struct RcloneStatus {
 fn rclone_status() -> RcloneStatus {
     let installed = drive::rclone_installed();
     RcloneStatus { installed, connected: installed && drive::signed_in(), brew: config::which("brew").is_some(), client: drive::client_source() }
+}
+
+/// The team gallery's Google sign-in needs renewing (made with rclone's
+/// retiring shared client or another old one). Its own call, so the ~200 ms
+/// of the first check don't hold up the window; cached afterwards.
+#[tauri::command(async)]
+fn sign_in_outdated() -> bool {
+    drive::sign_in_outdated()
 }
 
 #[tauri::command(async)]
@@ -440,6 +449,7 @@ fn disconnect_sharing(app: AppHandle) -> R<()> {
     if config::get("share.target").map(|t| t.starts_with(&format!("rclone:{}", drive::REMOTE))).unwrap_or(false) {
         drive::disconnect();
     }
+    drive::reset_outdated();
     config::set("share.target", "")?;
     config::set("share.label", "")?;
     config::set("share.auto", "")?;
@@ -635,7 +645,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_state, set_config, enable_global, disable_global, pause, resume, camera_permission, devices,
             test_shot, preview, share_shot, unshare, forget, team, wrapped, timelapse, drive_folders, use_folder,
-            rclone_status, brew_install, rclone_connect, rclone_cancel, rclone_use, forget_many, folders, set_folders, disconnect_sharing, finish_setup,
+            rclone_status, sign_in_outdated, brew_install, rclone_connect, rclone_cancel, rclone_use, forget_many, folders, set_folders, disconnect_sharing, finish_setup,
             set_autostart, first_name, install_cli, privacy_doc, set_private,
             repo_choices, set_repo_choice, update_status, update_check, update_install
         ])
