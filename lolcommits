@@ -220,6 +220,19 @@ has_drawtext() {
 imagick() { command -v magick >/dev/null 2>&1 && echo magick || echo convert; }
 has_imagick() { command -v magick >/dev/null 2>&1 || command -v convert >/dev/null 2>&1; }
 
+# lolcommits.folders (multi-valued): photos only in repos below one of them.
+# None set: every repo.
+in_folders() {
+  local f found=0 any=0
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    any=1; f="${f/#\~/$HOME}"
+    f="$(cd "$f" 2>/dev/null && pwd -P || printf '%s' "${f%/}")"   # git reports resolved paths
+    case "$1/" in "$f"/*) found=1 ;; esac
+  done < <(git config --get-all lolcommits.folders 2>/dev/null)
+  [ "$any" = 0 ] || [ "$found" = 1 ]
+}
+
 cmd_capture() {
   # called by git as post-commit hook: return immediately, shoot in background
   [ -n "${LOLCOMMITS_SKIP:-}" ] && return 0
@@ -228,6 +241,7 @@ cmd_capture() {
   local gitdir; gitdir="$(git rev-parse --git-dir 2>/dev/null)" || return 0
   # no selfie storm during rebase / cherry-pick sequences
   [ -d "$gitdir/rebase-merge" ] || [ -d "$gitdir/rebase-apply" ] || [ -f "$gitdir/sequencer/todo" ] && return 0
+  in_folders "$(git rev-parse --show-toplevel)" || return 0
   local sha subject repo branch
   sha="$(git rev-parse --short=10 HEAD)"
   subject="$(git log -1 --format=%s)"

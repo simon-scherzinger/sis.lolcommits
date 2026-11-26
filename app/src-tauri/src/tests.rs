@@ -147,15 +147,15 @@ fn full_flow() {
     store::forget_all();
     assert!(store::shots().is_empty());
 
-    let _ = fs::remove_dir_all(root);
-}
+    // lolcommits.folders: several values, replaced as a whole
+    config::set_all("folders", &["/work".into(), "~/Developer".into()]).unwrap();
+    assert_eq!(config::get_all("folders"), vec!["/work", "~/Developer"]);
+    config::set_all("folders", &["/work".into()]).unwrap();
+    assert_eq!(config::get_all("folders"), vec!["/work"]);
+    config::set_all("folders", &[]).unwrap();
+    assert!(config::get_all("folders").is_empty());
 
-#[test]
-fn parses_rclone_drives() {
-    let d = drive::parse_drives(r#"[{"id":"0AB","kind":"drive#teamDrive","name":"lolcommits"},{"id":"0CD","kind":"drive#teamDrive","name":"Eng"}]"#).unwrap();
-    assert_eq!(d.len(), 2);
-    assert_eq!(d[0].name, "lolcommits");
-    assert!(drive::parse_drives("not json").is_err());
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]
@@ -164,6 +164,14 @@ fn reads_the_token_from_rclone_authorize() {
     assert_eq!(drive::token_from(out).unwrap(), r#"{"access_token":"a","token_type":"Bearer","refresh_token":"r","expiry":"2026-11-26T09:00:00+01:00"}"#);
     assert!(drive::token_from("Failed to get token").is_none());
     assert_eq!(drive::target_for("0AB"), "rclone:lolcommits-gdrive,team_drive=0AB:lolcommits");
+}
+
+#[test]
+fn parses_rclone_drives() {
+    let d = drive::parse_drives(r#"[{"id":"0AB","kind":"drive#teamDrive","name":"lolcommits"},{"id":"0CD","kind":"drive#teamDrive","name":"Eng"}]"#).unwrap();
+    assert_eq!(d.len(), 2);
+    assert_eq!(d[0].name, "lolcommits");
+    assert!(drive::parse_drives("not json").is_err());
 }
 
 #[test]

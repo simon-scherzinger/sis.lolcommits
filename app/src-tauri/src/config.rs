@@ -70,6 +70,23 @@ pub fn set(key: &str, value: &str) -> Result<(), String> {
     }
 }
 
+/// All values of a multi-valued key (e.g. lolcommits.folders).
+pub fn get_all(key: &str) -> Vec<String> {
+    git(&["config", "--global", "--get-all", &format!("lolcommits.{key}")])
+        .map(|o| o.lines().filter(|l| !l.is_empty()).map(String::from).collect())
+        .unwrap_or_default()
+}
+
+/// Replace all values of a multi-valued key.
+pub fn set_all(key: &str, values: &[String]) -> Result<(), String> {
+    let k = format!("lolcommits.{key}");
+    let _ = git(&["config", "--global", "--unset-all", &k]);
+    for v in values {
+        git(&["config", "--global", "--add", &k, v])?;
+    }
+    Ok(())
+}
+
 pub fn git_global(args: &[&str]) -> Result<String, String> {
     let mut a = vec!["config", "--global"];
     a.extend_from_slice(args);
