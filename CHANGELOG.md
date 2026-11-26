@@ -10,6 +10,8 @@
 - **Warm-up slider** in the app's style instead of the blue system slider.
 - **Compact toolbars on narrow windows:** below 900 px the toolbar buttons show only their icon, with the label as a tooltip, so the bar stays on one line.
 - **Team gallery in order:** pictures from the same day are sorted with the most recently shared first. Before, they were in effect sorted by repo folder and a random part of the file name. Still no time of day is stored or shown.
+- **Faster window:** settings are read once and again only when they change, instead of starting `git` a dozen times per refresh. A refresh after each photo, toggle or share takes about 20 ms instead of about 320 ms.
+- **Team gallery opens at once:** it shows the pictures already on this computer right away and syncs with Google Drive in the background (the Refresh button spins meanwhile). Opening the tab again within a minute doesn't sync again; Refresh always does.
 - **Review intro tells the truth:** it no longer says the repo name is always blurred. Repos you show by name aren't blurred.
 - **Team gallery problem banner** has a "Change team gallery…" button, so you can switch to a target the app can use (an ssh target set up from the command line only works there).
 - **Only deleting is red:** confirmations like "Show name" or "Share every photo automatically" use the normal button.

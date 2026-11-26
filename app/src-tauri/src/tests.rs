@@ -162,6 +162,17 @@ fn full_flow() {
     config::set_all("folders", &[]).unwrap();
     assert!(config::get_all("folders").is_empty());
 
+    // settings are cached, but a change by the command line tool (same git
+    // config, written behind the app's back) is seen at the next read
+    assert_eq!(config::get("share.name").as_deref(), Some("Jürgen Groß"));
+    let cli = |args: &[&str]| assert!(std::process::Command::new("git").args(["config", "--global"]).args(args).status().unwrap().success());
+    cli(&["lolcommits.share.name", "Kim from the CLI"]);
+    assert_eq!(config::get("share.name").as_deref(), Some("Kim from the CLI"));
+    cli(&["--add", "lolcommits.folders", "/from-cli"]);
+    assert_eq!(config::get_all("folders"), vec!["/from-cli"]);
+    cli(&["--unset-all", "lolcommits.folders"]);
+    assert!(config::get_all("folders").is_empty());
+
     let _ = fs::remove_dir_all(root);
 }
 

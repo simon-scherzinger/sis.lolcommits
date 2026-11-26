@@ -629,8 +629,8 @@ const pausedText = () => !S.pausedUntil ? "" : S.pausedUntil > 4e12 ? "Paused un
 
 // ------------------------------------------------------------------ state
 async function load() {
-  S = await api("get_state");
-  S.repos = await api("repo_choices").catch(() => []);
+  const [state, repos] = await Promise.all([api("get_state"), api("repo_choices").catch(() => [])]);
+  S = state; S.repos = repos;
   renderHeader(); renderShots(); renderSettings(); renderPrivacy(); renderTeamShell(); renderReview();
 }
 function renderHeader() {
@@ -906,12 +906,25 @@ function renderTeamShell() {
   $("#tlabel").textContent = S.sharing ? S.shareLabel : "";
   $("#syncBtn").title = S.sharing ? "Refresh – " + S.shareLabel : "Refresh";
 }
-let teamLoaded = false;
+// The gallery shows what is already on this computer at once; syncing with
+// Google Drive (rclone, a few seconds) runs behind it and redraws when done.
+// refresh: "auto" (opening the tab, at most once a minute) or "force" (Refresh).
+let teamLoaded = false, teamSync = null, teamSyncedAt = 0;
 async function loadTeam(refresh, btn) {
   if (!S.sharing) return;
   if (!teamLoaded) { $("#teamEmpty").hidden = true; $("#tgrid").replaceChildren(...skelCards(8)); }
-  await busy(btn, async () => { TEAM = await api("team", {refresh}); teamLoaded = true; drawTeam(); });
-  if (!teamLoaded) $("#tgrid").replaceChildren();
+  const local = await api("team", {refresh: false}).catch(() => null);
+  // nothing local yet (first visit): keep the placeholders until the sync is done
+  if (local && (local.length || teamLoaded)) { TEAM = local; teamLoaded = true; drawTeam(); }
+  if (teamSync) return teamSync;
+  if (refresh === "auto" && teamLoaded && Date.now() - teamSyncedAt < 60e3) return;
+  teamSync = busy(btn, async () => {
+    TEAM = await api("team", {refresh: true}); teamSyncedAt = Date.now(); teamLoaded = true; drawTeam();
+  }).finally(() => {
+    teamSync = null;
+    if (!teamLoaded) { teamLoaded = true; drawTeam(); }   // sync failed: show what there is
+  });
+  return teamSync;
 }
 function drawTeam() {
   const people = [...new Set(TEAM.map(r => r.name))].sort((a, b) => a.localeCompare(b));
@@ -931,7 +944,7 @@ function drawTeam() {
       h("div", {class: "meta"}, h("span", {}, r.name + (r.repo ? " · " + r.repo : "")), h("span", {}, fmtDate(r.date)))))));
 }
 $("#personSel").onchange = $("#tq").oninput = drawTeam;
-$("#syncBtn").onclick = e => loadTeam(true, e.currentTarget);
+$("#syncBtn").onclick = e => loadTeam("force", e.currentTarget);
 
 // ------------------------------------------------------------------ settings
 let devicesLoaded = false;
@@ -1441,7 +1454,7 @@ function route(to) {
   $$("nav a").forEach(a => a.classList.toggle("on", a.dataset.v === view));
   const el = anchor && document.getElementById(anchor);
   if (el) requestAnimationFrame(() => el.scrollIntoView({block: "start"})); else window.scrollTo(0, 0);
-  if (view === "team") loadTeam(true, $("#syncBtn"));
+  if (view === "team") loadTeam("auto", $("#syncBtn"));
 }
 $$("nav a").forEach(a => a.onclick = () => route(a.dataset.v));
 

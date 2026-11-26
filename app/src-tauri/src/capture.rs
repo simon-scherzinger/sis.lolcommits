@@ -50,7 +50,16 @@ pub fn permission_granted() -> bool {
     }
     #[cfg(target_os = "macos")]
     {
-        nokhwa::nokhwa_check()
+        // ~50 ms per check and asked on every window refresh. A "yes" is
+        // remembered; a "no" is asked again, so allowing it later shows up.
+        use std::sync::atomic::{AtomicBool, Ordering};
+        static GRANTED: AtomicBool = AtomicBool::new(false);
+        if GRANTED.load(Ordering::Relaxed) {
+            return true;
+        }
+        let ok = nokhwa::nokhwa_check();
+        GRANTED.store(ok, Ordering::Relaxed);
+        ok
     }
     #[cfg(not(target_os = "macos"))]
     {
