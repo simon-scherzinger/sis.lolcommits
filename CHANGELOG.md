@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Repo name from git:** pictures are filed under the name of the `origin` remote (e.g. `hec.dsb-layer`), not the folder name, so every git worktree or clone in another folder counts as the same repo. Without a remote it's the main worktree's folder. Pictures taken before stay where they are.
+
 ## 0.5.1
 
 - **Update menu shows the right version:** the app checks for updates every hour instead of every six, and while updating it shows the version it is really installing. Before, the menu could still offer an older version (e.g. "Update to 0.4.2") although the newest one got installed.

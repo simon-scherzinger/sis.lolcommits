@@ -233,6 +233,23 @@ in_folders() {
   [ "$any" = 0 ] || [ "$found" = 1 ]
 }
 
+# Repo name from git, not from the folder: the origin remote ("org/name.git"
+# -> "name"), else the main worktree's folder. So every worktree and every
+# clone with another folder name counts as the same repo.
+repo_name() {
+  local url name common
+  url="$(git remote get-url origin 2>/dev/null)"
+  name="${url%/}"; name="${name%.git}"; name="${name##*/}"; name="${name##*:}"
+  if [ -z "$name" ]; then
+    common="$(git rev-parse --git-common-dir 2>/dev/null)"
+    case "$common" in
+      */.git) name="$(basename "$(cd "$common/.." && pwd)")" ;;
+      *) name="$(basename "$(git rev-parse --show-toplevel)")" ;;
+    esac
+  fi
+  printf '%s' "$name"
+}
+
 cmd_capture() {
   # called by git as post-commit hook: return immediately, shoot in background
   [ -n "${LOLCOMMITS_SKIP:-}" ] && return 0
@@ -245,7 +262,7 @@ cmd_capture() {
   local sha subject repo branch
   sha="$(git rev-parse --short=10 HEAD)"
   subject="$(git log -1 --format=%s)"
-  repo="$(basename "$(git rev-parse --show-toplevel)")"
+  repo="$(repo_name)"
   branch="$(git branch --show-current 2>/dev/null)"; branch="${branch:-detached}"
 
   # with lolcommits.app installed the app takes the photo: one camera permission,
