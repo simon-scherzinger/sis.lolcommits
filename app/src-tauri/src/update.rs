@@ -1,5 +1,5 @@
 //! Updates from the GitHub releases (latest.json, signed with the updater key).
-//! Checks a minute after start and then every six hours unless
+//! Checks a minute after start and then every hour unless
 //! `lolcommits.update.auto` is false. Installing waits for a running photo,
 //! replaces the app and restarts it.
 use crate::{config, tray};
@@ -101,7 +101,10 @@ pub async fn install(app: &AppHandle) -> Result<(), String> {
         changed(app);
         return Err("lolcommits is up to date".into());
     };
+    // the menu may still show an older version from the last check
     with(app, |s| {
+        s.available = Some(update.version.clone());
+        s.notes = update.body.clone().unwrap_or_default();
         s.progress = Some(0);
         s.error.clear();
     });
@@ -154,7 +157,8 @@ async fn tokio_sleep(d: Duration) {
     let _ = tauri::async_runtime::spawn_blocking(move || std::thread::sleep(d)).await;
 }
 
-/// Background check: a minute after start, then every six hours.
+/// Background check: a minute after start, then every hour, so the menu
+/// doesn't offer a version that a newer release has replaced.
 pub fn start(app: AppHandle) {
     tauri::async_runtime::spawn(async move {
         let test = std::env::var("LOLCOMMITS_UPDATE_URL").is_ok();
@@ -165,7 +169,7 @@ pub fn start(app: AppHandle) {
                     crate::store::log(&format!("update check failed: {e}"));
                 }
             }
-            tokio_sleep(Duration::from_secs(6 * 3600)).await;
+            tokio_sleep(Duration::from_secs(3600)).await;
         }
     });
 }
