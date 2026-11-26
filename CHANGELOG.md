@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.3
+
+- **Camera free again after a photo:** lolcommits now lets go of the camera after every photo. Before, Photo Booth, FaceTime or WhatsApp got no picture until you quit lolcommits.
+
 ## 0.5.2
 
 - **Repo name from git:** pictures are filed under the name of the `origin` remote (e.g. `hec.dsb-layer`), not the folder name, so every git worktree or clone in another folder counts as the same repo. Without a remote it's the main worktree's folder. Pictures taken before stay where they are.

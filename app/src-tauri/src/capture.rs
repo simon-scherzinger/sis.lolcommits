@@ -102,6 +102,7 @@ fn grab_native() -> Result<RgbImage, String> {
     }
     let fmt = RequestedFormat::new::<RgbFormat>(RequestedFormatType::AbsoluteHighestResolution);
     let mut cam = Camera::new(index_from_config(), fmt).map_err(|e| format!("camera: {e}"))?;
+    let _unlock = Unlock(cam.info().misc());
     cam.open_stream().map_err(|e| format!("camera: {e}"))?;
     let until = Instant::now() + Duration::from_secs_f32(delay());
     let mut frame = cam.frame().map_err(|e| format!("camera: {e}"))?;
@@ -112,6 +113,33 @@ fn grab_native() -> Result<RgbImage, String> {
     }
     let _ = cam.stop_stream();
     frame.decode_image::<RgbFormat>().map_err(|e| format!("decode: {e}"))
+}
+
+/// nokhwa 0.10 locks the camera for configuration when it opens the stream and
+/// never unlocks it (its `locked` flag is never set), so Photo Booth, FaceTime
+/// or WhatsApp get no picture until lolcommits quits. Unlock it ourselves –
+/// also when grabbing fails halfway.
+struct Unlock(String);
+
+#[allow(unexpected_cfgs)] // objc 0.2 macros check cfg(feature = "cargo-clippy")
+impl Drop for Unlock {
+    fn drop(&mut self) {
+        #[cfg(target_os = "macos")]
+        unsafe {
+            use objc::runtime::Object;
+            use objc::{class, msg_send, sel, sel_impl};
+            let id: *mut Object = msg_send![class!(NSString), alloc];
+            let id: *mut Object = msg_send![id, initWithBytes: self.0.as_ptr() length: self.0.len() encoding: 4usize];
+            if id.is_null() {
+                return;
+            }
+            let dev: *mut Object = msg_send![class!(AVCaptureDevice), deviceWithUniqueID: id];
+            if !dev.is_null() {
+                let _: () = msg_send![dev, unlockForConfiguration];
+            }
+            let _: () = msg_send![id, release];
+        }
+    }
 }
 
 fn grab_ffmpeg() -> Result<RgbImage, String> {
