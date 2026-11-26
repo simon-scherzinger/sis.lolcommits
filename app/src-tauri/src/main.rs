@@ -277,6 +277,41 @@ fn forget(app: AppHandle, file: Option<String>, also_shared: bool) -> R<()> {
     Ok(())
 }
 
+#[derive(Clone, Serialize)]
+struct Progress {
+    done: usize,
+    total: usize,
+}
+
+/// Delete several pictures; reports progress as "forget-progress" and keeps
+/// going past single failures. Returns the errors, one per failed picture.
+#[tauri::command(async)]
+fn forget_many(app: AppHandle, files: Vec<String>, also_shared: bool) -> Vec<String> {
+    let total = files.len();
+    let mut errors = Vec::new();
+    for (i, f) in files.iter().enumerate() {
+        if let Err(e) = forget(app.clone(), Some(f.clone()), also_shared) {
+            errors.push(format!("{}: {e}", Path::new(f).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default()));
+        }
+        let _ = app.emit("forget-progress", Progress { done: i + 1, total });
+    }
+    errors
+}
+
+/// lolcommits.folders: photos only in repos below these folders (empty: everywhere).
+#[tauri::command(async)]
+fn folders() -> Vec<String> {
+    config::get_all("folders")
+}
+
+#[tauri::command(async)]
+fn set_folders(folders: Vec<String>) -> R<()> {
+    if folders.iter().any(|f| f.contains('\n') || f.is_empty()) {
+        return Err("invalid folder".into());
+    }
+    config::set_all("folders", &folders)
+}
+
 #[tauri::command(async)]
 fn team(app: AppHandle, refresh: bool) -> R<Vec<share::TeamRow>> {
     if refresh {
@@ -344,9 +379,11 @@ fn use_folder(app: AppHandle, path: String, label: String) -> R<()> {
     if !base.is_dir() {
         return Err(format!("{path} is not a folder"));
     }
-    let dir = if base.file_name().map(|n| n == "lolcommits").unwrap_or(false) { base.to_path_buf() } else { base.join("lolcommits") };
+    let named = base.file_name().map(|n| n == "lolcommits").unwrap_or(false);
+    let dir = if named { base.to_path_buf() } else { base.join("lolcommits") };
     std::fs::create_dir_all(&dir).map_err(|e| format!("can't create {}: {e}", dir.display()))?;
     share::probe(&share::Target::Folder(dir.clone()))?;
+    let label = if named { label } else { format!("{label} › lolcommits") };
     set_target(&app, &dir.to_string_lossy(), &label)
 }
 
@@ -598,7 +635,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             get_state, set_config, enable_global, disable_global, pause, resume, camera_permission, devices,
             test_shot, preview, share_shot, unshare, forget, team, wrapped, timelapse, drive_folders, use_folder,
-            rclone_status, brew_install, rclone_connect, rclone_use, disconnect_sharing, finish_setup,
+            rclone_status, brew_install, rclone_connect, rclone_cancel, rclone_use, forget_many, folders, set_folders, disconnect_sharing, finish_setup,
             set_autostart, first_name, install_cli, privacy_doc, set_private,
             repo_choices, set_repo_choice, update_status, update_check, update_install
         ])

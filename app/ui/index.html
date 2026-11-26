@@ -27,11 +27,8 @@ a{color:inherit}
 .brand small{font:500 11px system-ui;color:var(--mut);margin-left:6px;letter-spacing:0}
 nav{display:flex;gap:3px;background:var(--card2);padding:3px;border-radius:10px}
 nav a{padding:5px 13px;border-radius:8px;text-decoration:none;color:var(--mut);font-weight:600;font-size:13px;cursor:default}
-nav a.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
+nav a.on{background:var(--card);color:var(--fg)}
 .spacer{flex:1}
-.pill{font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;background:var(--card2);color:var(--mut);white-space:nowrap}
-.pill.on{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
-.pill.on::before{content:"● "}
 .btn{border:1px solid var(--line);background:var(--card);padding:7px 14px;border-radius:9px;cursor:default;font-weight:600;font-size:13px;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
 .btn:hover{border-color:var(--mut)}
 .btn.primary{background:var(--acc);color:var(--acc-fg);border-color:transparent}
@@ -41,6 +38,7 @@ nav a.on{background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
 .btn.link{border:0;background:none;color:var(--mut);padding:7px 4px;text-decoration:underline}
 .btn:disabled{opacity:.45}
 .btn.busy{position:relative;color:transparent!important}
+#updInstall{font-variant-numeric:tabular-nums;min-width:190px;justify-content:center}
 .btn.busy::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;border-radius:50%;border:2px solid var(--mut);border-top-color:transparent;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(1turn)}}
 main{max-width:1440px;margin:auto;padding:18px}
@@ -49,11 +47,13 @@ section[hidden],[hidden]{display:none!important}
 .banner.bad{background:color-mix(in srgb,var(--bad) 14%,var(--card))}
 .banner .spacer{flex:1}
 .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
-.bar input[type=search],select,.field input:not([type=checkbox]):not([type=range]){background:var(--card);border:1px solid var(--line);border-radius:9px;padding:7px 11px}
+.bar input[type=search],select,.field input:not([type=checkbox]):not([type=range]){background:var(--card);border:1px solid var(--line);border-radius:9px;padding:0 11px;height:34px;font-size:13px}
+select{-webkit-appearance:none;appearance:none;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.bar .btn{height:34px;padding-top:0;padding-bottom:0}
 .bar input[type=search]{min-width:220px}
 .count{color:var(--mut);font-size:13px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
-.shot{margin:0;background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);position:relative;transition:transform .15s}
+.shot{margin:0;background:var(--card);border-radius:var(--r);overflow:hidden;border:1px solid var(--line);position:relative;transition:transform .15s}
 .shot:hover{transform:translateY(-2px)}
 .shot img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--card2)}
 .shot figcaption{padding:9px 13px 11px}
@@ -63,8 +63,8 @@ section[hidden],[hidden]{display:none!important}
 .empty{text-align:center;padding:70px 20px;color:var(--mut)}
 .empty h2{color:var(--fg);font-size:38px;margin:0 0 8px}
 .empty .btns{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(400px,1fr));gap:16px;align-items:start}
-.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px}
+.cards{display:grid;grid-template-columns:1fr;gap:16px}
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--line);padding:18px 20px}
 .card h3{margin:0 0 3px;font-size:16px}
 .card p.sub{margin:0 0 12px;color:var(--mut);font-size:13px}
 .field{display:grid;grid-template-columns:1fr auto;gap:3px 16px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
@@ -95,6 +95,7 @@ dialog::backdrop{background:#000000d0}
 .modal img{width:100%;max-height:min(42vh,340px);object-fit:contain;border-radius:10px;display:block;margin-bottom:12px;min-height:120px;background:var(--card2)}
 .checks label{display:flex;gap:10px;align-items:center;padding:5px 0;font-weight:500}
 .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.doc:focus{outline:none}
 .doc{width:min(860px,94vw);max-height:86vh;overflow:auto;-webkit-user-select:text;user-select:text}
 .doc h1{font-size:22px;margin:0 0 10px}.doc h2{font-size:17px;margin:22px 0 8px}
 .doc p,.doc li{color:var(--fg);line-height:1.5}.doc ul{padding-left:20px}
@@ -112,10 +113,18 @@ dialog::backdrop{background:#000000d0}
 /* ---------------------------------------------------------------- review */
 nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;border-radius:99px;background:var(--acc);color:var(--acc-fg);font-size:11px;line-height:18px;text-align:center}
 .badge.priv{background:var(--card2);color:var(--mut)}
+.shot.sel{outline:3px solid var(--acc);outline-offset:-3px}
+.shot .tick{position:absolute;top:9px;right:9px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:#0005;display:none;place-items:center;color:var(--acc-fg);font-weight:800;font-size:13px}
+.selecting .shot .tick{display:grid}.shot.sel .tick{background:var(--acc);border-color:var(--acc)}
+.selbar{position:sticky;bottom:14px;margin:16px auto 0;width:fit-content;display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px 8px 16px;box-shadow:var(--shadow)}
+#ctx{position:fixed;z-index:70;min-width:190px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px;box-shadow:var(--shadow)}
+#ctx button{display:block;width:100%;text-align:left;border:0;background:none;padding:6px 10px;border-radius:6px;font-size:13px}
+#ctx button:hover{background:var(--acc);color:var(--acc-fg)}#ctx button.danger{color:var(--bad)}#ctx button.danger:hover{background:var(--bad);color:#fff}
+#ctx hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
 .review{display:flex;flex-direction:column;align-items:center;gap:16px}
 .review .hint{color:var(--mut);font-size:13px;text-align:center}
 .stack{--w:min(600px,92vw,calc((100vh - 330px) * 16 / 9));position:relative;width:var(--w);height:calc(var(--w) * 9 / 16 + 92px)}
-.rcard{position:absolute;inset:0;background:var(--card);border-radius:18px;box-shadow:0 2px 6px #0002,0 14px 40px #0003;overflow:hidden;touch-action:none;transition:transform .25s ease,opacity .25s ease;transform-origin:50% 90%}
+.rcard{position:absolute;inset:0;background:var(--card);border-radius:18px;border:1px solid var(--line);overflow:hidden;touch-action:none;transition:transform .25s ease,opacity .25s ease;transform-origin:50% 90%}
 .rcard.drag{transition:none;cursor:grabbing}
 .rcard .pic{width:100%;aspect-ratio:16/9;background:var(--card2) center/cover no-repeat;display:grid;place-items:center;color:var(--mut)}
 .rcard .info{padding:12px 16px}
@@ -127,7 +136,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .stamp.hot{left:22px;color:#21d36b;border-color:#21d36b;transform:rotate(-14deg)}
 .stamp.not{right:22px;color:#ff4d5e;border-color:#ff4d5e;transform:rotate(14deg)}
 .rbtns{display:flex;gap:22px;align-items:center}
-.round{width:66px;height:66px;border-radius:50%;border:1px solid var(--line);background:var(--card);box-shadow:var(--shadow);font-size:28px;display:grid;place-items:center;transition:transform .12s}
+.round{width:66px;height:66px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:28px;display:grid;place-items:center;transition:transform .12s}
 .round:hover:not(:disabled){transform:scale(1.08)}
 .round:disabled{opacity:.35}
 .round.small{width:46px;height:46px;font-size:18px}
@@ -138,7 +147,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .review.asking .stack{--w:min(600px,92vw,calc((100vh - 410px) * 16 / 9))}
 .ask{width:min(600px,92vw,calc((100vh - 410px) * 16 / 9));min-width:min(420px,92vw);background:color-mix(in srgb,var(--acc) 22%,var(--card));border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .ask .q{flex:1;min-width:220px}
-.consent{width:min(560px,92vw);background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:22px 24px}
+.consent{width:min(560px,92vw);background:var(--card);border-radius:18px;border:1px solid var(--line);padding:22px 24px}
 .consent h2{font-size:34px;margin:0 0 10px}
 .consent .rule{display:flex;gap:12px;align-items:flex-start;margin:10px 0}
 .consent .rule b{font-size:22px;line-height:1}
@@ -152,9 +161,9 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .step h1{font-size:46px;margin:0 0 6px;line-height:1.05}
 .step .lead{font-size:16px;color:var(--mut);margin:0 0 22px;max-width:620px}
 .step .nav{display:flex;gap:10px;align-items:center;margin-top:26px}
-.hero{width:120px;height:120px;border-radius:28px;background:var(--acc);display:grid;place-items:center;margin-bottom:18px;box-shadow:var(--shadow)}
+.hero{width:120px;height:120px;border-radius:28px;background:var(--acc);display:grid;place-items:center;margin-bottom:18px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.col{background:var(--card);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow)}
+.col{background:var(--card);border-radius:var(--r);padding:16px 18px;border:1px solid var(--line)}
 .col h4{margin:0 0 8px;font-size:15px}
 .col ul{margin:0;padding-left:18px;color:var(--mut)}.col li{margin:4px 0}
 .note{margin-top:14px;background:color-mix(in srgb,var(--acc) 20%,var(--card));border-radius:var(--r);padding:14px 16px}
@@ -163,8 +172,11 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .cam .shotbox{aspect-ratio:16/9;background:var(--card2);border-radius:var(--r);display:grid;place-items:center;overflow:hidden;color:var(--mut)}
 .cam .shotbox img{width:100%;height:100%;object-fit:cover}
 .choice{display:grid;gap:10px}
-.opt{display:flex;gap:14px;align-items:center;background:var(--card);border:2px solid transparent;border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);text-align:left;width:100%}
-.opt:hover{border-color:var(--line)}
+.opt{display:flex;gap:14px;align-items:center;background:var(--card);border:2px solid var(--line);border-radius:var(--r);padding:14px 16px;text-align:left;width:100%}
+.opt:disabled{opacity:.5}
+.opt.busy{opacity:1}.opt.busy .go{color:transparent;position:relative}
+.opt.busy .go::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;border-radius:50%;border:2px solid var(--mut);border-top-color:transparent;animation:spin .8s linear infinite}
+.opt:hover:not(:disabled){border-color:var(--mut)}
 .opt.sel{border-color:var(--fg)}
 .opt .ic{width:38px;height:38px;border-radius:10px;background:var(--card2);display:grid;place-items:center;font-size:20px;flex:none}
 .opt .t{font-weight:700}.opt .d{color:var(--mut);font-size:12px}
@@ -185,7 +197,6 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
     <a data-v="privacy">Privacy</a>
   </nav>
   <div class="spacer"></div>
-  <span id="hookPill" class="pill"></span>
   <button class="btn primary" id="testBtn">📸 Test photo</button>
 </header>
 
@@ -199,12 +210,20 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       <select id="repoSel" aria-label="Repository"></select>
       <input id="q" type="search" placeholder="Search commit messages…" aria-label="Search">
       <span class="count" id="count"></span>
+      <button class="btn" id="selectBtn">Select</button>
       <div class="spacer"></div>
       <button class="btn" id="timelapseBtn">🎞 Timelapse</button>
-      <select id="yearSel" aria-label="Year"></select>
+      <select id="yearSel" aria-label="Year for Wrapped"></select>
       <button class="btn" id="wrappedBtn">🗓 Wrapped</button>
     </div>
     <div class="grid" id="grid"></div>
+    <div class="selbar" id="selBar" hidden>
+      <span id="selCount"></span>
+      <button class="btn" id="selAll">Select all</button>
+      <button class="btn" id="selUnshare">Unshare</button>
+      <button class="btn danger solid" id="selDelete">Delete</button>
+      <button class="btn" id="selDone">Done</button>
+    </div>
     <div class="empty" id="shotsEmpty" hidden>
       <h2 class="impact">no lolcommits yet</h2>
       <div>Commit something. The menu bar icon flashes and the picture shows up here.</div>
@@ -279,6 +298,9 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
           </div>
           <div class="row" id="resumeRow" hidden><span id="pausedLbl"></span><button class="btn" data-act="resume">Resume</button></div>
         </div>
+        <div class="field"><label>Only in these folders</label><button class="btn" id="addFolderBtn">Add folder…</button>
+          <div class="hint">Photos only for repos inside these folders, e.g. your work folder but not your experiments. None: every repo.</div>
+          <div id="folderList" style="grid-column:1/-1"></div></div>
         <div class="field"><label for="s-device">Camera</label><select id="s-device"><option value="">Default</option></select></div>
         <div class="field"><label for="s-delay">Warm-up <span class="count" id="delayVal"></span></label><input id="s-delay" type="range" min="0" max="4" step="0.5">
           <div class="hint">Seconds before the shot, so the camera can adjust to the light.</div></div>
@@ -414,7 +436,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 
     <div class="step" data-step="team">
       <h1 class="impact">team gallery</h1>
-      <p class="lead">Optional. Share your best shots in a shared Google Drive. You can do this later in Settings.</p>
+      <p class="lead">Optional. Share your best shots in a Google shared drive. Pick the shared drive – lolcommits puts the pictures in a folder <b>lolcommits</b> inside it. You can do this later in Settings.</p>
       <div id="wzTeamPick">
         <div id="wzDriveBox" hidden>
           <div class="sub-h">Google Drive on this Mac</div>
@@ -499,12 +521,13 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 </dialog>
 
 <dialog id="docDlg">
-  <div class="modal doc">
+  <div class="modal doc" tabindex="-1">
     <div id="docBody"></div>
     <div class="actions"><button class="btn link" id="docWeb">Open on GitHub</button><button class="btn primary" data-close>Close</button></div>
   </div>
 </dialog>
 
+<div id="ctx" role="menu" hidden></div>
 <div id="toasts" role="status" aria-live="polite"></div>
 
 <script>
@@ -514,6 +537,7 @@ const invoke = TAURI.core.invoke, fileSrc = TAURI.core.convertFileSrc;
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const PRIVACY_URL = "https://github.com/simon-scherzinger/sis.lolcommits/blob/main/PRIVACY.md";
+const CLIENT_HELP_URL = "https://github.com/simon-scherzinger/sis.lolcommits/blob/main/README.md#google-sign-in-without-drive-for-desktop";
 let S = null, TEAM = [], TVIEW = [], view = "shots", list = [], vi = 0, viewerKind = "shots";
 
 const api = (cmd, args) => invoke(cmd, args || {});
@@ -533,17 +557,22 @@ function toast(msg, err) {
   $("#toasts").append(t);
   setTimeout(() => t.remove(), err ? 7000 : 3000);
 }
+// Shows a spinner on the element and blocks it until fn is done. For option
+// cards (.opt) the other cards are blocked too, so nothing runs twice.
 async function busy(btn, fn) {
-  if (btn) { btn.disabled = true; btn.classList.add("busy"); }
+  const group = !btn ? [] : btn.classList.contains("opt") ? $$(".opt").filter(o => !o.disabled) : [btn];
+  group.forEach(b => b.disabled = true); if (btn) btn.classList.add("busy");
   try { return await fn(); }
   catch (e) { toast(e, true); }
-  finally { if (btn) { btn.disabled = false; btn.classList.remove("busy"); } }
+  finally { group.forEach(b => b.disabled = false); if (btn) btn.classList.remove("busy"); }
 }
-const fmtTs = ts => { const d = new Date(ts); return isNaN(d) ? ts : d.toLocaleString(undefined, {dateStyle: "medium", timeStyle: "short"}); };
-const fmtDate = d => { const x = new Date(d + "T12:00:00"); return isNaN(x) ? d : x.toLocaleDateString(undefined, {dateStyle: "medium"}); };
+// Dates in the language of the interface (English), local time.
+const LOCALE = "en-GB";
+const fmtTs = ts => { const d = new Date(ts); return isNaN(d) ? ts : d.toLocaleString(LOCALE, {day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"}); };
+const fmtDate = d => { const x = new Date(d + "T12:00:00"); return isNaN(x) ? d : x.toLocaleDateString(LOCALE, {day: "numeric", month: "short", year: "numeric"}); };
 const cfg = (k, d = "") => (S && S.config[k.toLowerCase()]) ?? d;
 const pausedText = () => !S.pausedUntil ? "" : S.pausedUntil > 4e12 ? "Paused until you resume"
-  : "Paused until " + new Date(S.pausedUntil * 1000).toLocaleString(undefined, {weekday: "short", hour: "2-digit", minute: "2-digit"});
+  : "Paused until " + new Date(S.pausedUntil * 1000).toLocaleString(LOCALE, {weekday: "short", hour: "2-digit", minute: "2-digit"});
 
 // ------------------------------------------------------------------ state
 async function load() {
@@ -553,9 +582,6 @@ async function load() {
 }
 function renderHeader() {
   $("#ver").textContent = S.version;
-  const p = $("#hookPill"), on = S.hookGlobal && !S.pausedUntil;
-  p.className = "pill" + (on ? " on" : "");
-  p.textContent = !S.hookGlobal ? "off" : S.pausedUntil ? "paused" : "on";
   $("#pauseBanner").hidden = !S.pausedUntil; $("#pauseText").textContent = "⏸ " + pausedText();
   $("#offBanner").hidden = S.hookGlobal || !S.setupDone;
   $("#errBanner").hidden = !S.shareError; $("#errText").textContent = S.shareError;
@@ -572,18 +598,24 @@ function renderShots() {
   $("#repoSel").replaceChildren(h("option", {value: ""}, "All repos"), ...repos.map(r => h("option", {value: r}, r)));
   $("#repoSel").value = repos.includes(cur) ? cur : "";
   const years = [...new Set(S.shots.map(s => s.ts.slice(0, 4)))].sort().reverse();
-  const cy = $("#yearSel").value;
+  const cy = $("#yearSel").value || String(new Date().getFullYear());
   $("#yearSel").replaceChildren(...years.map(y => h("option", {value: y}, y)));
-  if (years.includes(cy)) $("#yearSel").value = cy;
-  ["#timelapseBtn", "#wrappedBtn", "#yearSel"].forEach(s => $(s).disabled = !S.shots.length);
+  $("#yearSel").value = years.includes(cy) ? cy : (years[0] || "");
+  $("#yearSel").hidden = years.length < 2;
+  $("#wrappedBtn").textContent = "🗓 Wrapped" + (years.length === 1 ? " " + years[0] : "");
+  ["#timelapseBtn", "#wrappedBtn", "#selectBtn"].forEach(s => $(s).disabled = !S.shots.length);
   $("#timelapseBtn").title = S.ffmpeg ? "" : "Needs ffmpeg (brew install ffmpeg)";
   drawShots();
 }
 function drawShots() {
   list = filteredShots();
+  if (SEL) for (const f of [...SEL]) if (!S.shots.some(s => s.file === f)) SEL.delete(f);
   $("#shotsEmpty").hidden = S.shots.length > 0;
   $("#count").textContent = S.shots.length ? list.length + (list.length === 1 ? " shot" : " shots") : "";
-  $("#grid").replaceChildren(...list.map((s, i) => h("figure", {class: "shot", onclick: () => openViewer("shots", i)},
+  $("#grid").classList.toggle("selecting", !!SEL);
+  $("#grid").replaceChildren(...list.map((s, i) => h("figure", {class: "shot" + (SEL && SEL.has(s.file) ? " sel" : ""), "data-file": s.file,
+      onclick: e => cardClick(e, i), oncontextmenu: e => shotMenu(e, s, i)},
+    h("span", {class: "tick"}, "✓"),
     s.shared ? h("span", {class: "badge"}, "shared") : s.private ? h("span", {class: "badge priv"}, "private") : null,
     h("img", {src: src(s.file), loading: "lazy", alt: s.subject}),
     h("figcaption", {},
@@ -591,6 +623,89 @@ function drawShots() {
       h("div", {class: "meta"}, h("span", {}, s.repo + " · " + s.branch), h("span", {}, fmtTs(s.ts)))))));
 }
 $("#repoSel").onchange = $("#q").oninput = drawShots;
+
+// ------------------------------------------------------------------ select several
+let SEL = null, selLast = -1;     // Set of files while selecting
+function cardClick(e, i) {
+  if (!SEL && !e.metaKey && !e.shiftKey) return openViewer("shots", i);
+  if (!SEL) SEL = new Set();
+  const f = list[i].file;
+  if (e.shiftKey && selLast >= 0) list.slice(Math.min(selLast, i), Math.max(selLast, i) + 1).forEach(s => SEL.add(s.file));
+  else if (SEL.has(f)) SEL.delete(f); else SEL.add(f);
+  selLast = i; renderSel();
+}
+// selection changes only toggle classes, so the pictures don't reload
+function renderSel() {
+  $("#grid").classList.toggle("selecting", !!SEL);
+  $$("#grid .shot").forEach(f => f.classList.toggle("sel", !!SEL && SEL.has(f.dataset.file)));
+  $("#selBar").hidden = !SEL; $("#selectBtn").hidden = !!SEL;
+  if (!SEL) return;
+  const files = [...SEL], shared = S.shots.filter(s => SEL.has(s.file) && s.shared).length;
+  $("#selCount").textContent = files.length === 1 ? "1 selected" : files.length + " selected";
+  $("#selDelete").disabled = !files.length;
+  $("#selUnshare").hidden = !shared;
+}
+function endSelect() { SEL = null; selLast = -1; renderSel(); }
+$("#selectBtn").onclick = () => { SEL = new Set(); renderSel(); };
+$("#selDone").onclick = endSelect;
+$("#selAll").onclick = () => { list.forEach(s => SEL.add(s.file)); renderSel(); };
+document.addEventListener("keydown", e => { if (e.key === "Escape" && SEL && !document.querySelector("dialog[open]")) endSelect(); });
+let onProgress = null;
+$("#selDelete").onclick = () => {
+  const files = [...SEL], shared = S.shots.some(s => SEL.has(s.file) && s.shared), n = files.length;
+  confirmDlg({title: n === 1 ? "Delete this picture?" : "Delete " + n + " pictures?", text: "This can't be undone.", go: "Delete",
+    also: shared ? {label: "Also remove them from the team gallery", checked: true} : null,
+    run: async r => {
+      onProgress = p => $("#cText").textContent = "Deleting " + p.done + " of " + p.total + "…";
+      try {
+        const errs = await api("forget_many", {files, alsoShared: !!r.also});
+        if (errs.length) toast(errs.length + " not deleted – " + errs[0], true); else toast("Deleted ✓");
+      } finally { onProgress = null; }
+      endSelect(); await load();
+    }});
+};
+$("#selUnshare").onclick = e => busy(e.currentTarget, async () => {
+  const files = S.shots.filter(s => SEL.has(s.file) && s.shared).map(s => s.file);
+  for (let i = 0; i < files.length; i++) {
+    $("#selCount").textContent = "Unsharing " + (i + 1) + " of " + files.length + "…";
+    await api("unshare", {file: files[i]});
+  }
+  toast("Removed from the team gallery ✓"); await load(); renderSel();
+});
+
+// ------------------------------------------------------------------ context menu
+function menu(e, items) {
+  e.preventDefault();
+  const m = $("#ctx");
+  m.replaceChildren(...items.map(it => it === "-" ? h("hr") : h("button", {class: it.danger ? "danger" : "", role: "menuitem",
+    onclick: () => { m.hidden = true; it.run(); }}, it.label)));
+  m.hidden = false;
+  const r = m.getBoundingClientRect();
+  m.style.left = Math.min(e.clientX, innerWidth - r.width - 8) + "px";
+  m.style.top = Math.min(e.clientY, innerHeight - r.height - 8) + "px";
+}
+const copyText = t => navigator.clipboard.writeText(t).then(() => toast("Copied ✓"), err => toast(err, true));
+const reveal = f => TAURI.opener.revealItemInDir(f).catch(err => toast(err, true));
+function shotMenu(e, s, i) {
+  if (SEL) return e.preventDefault();
+  menu(e, [
+    {label: "Open", run: () => openViewer("shots", i)},
+    s.shared ? {label: "Unshare", run: () => unshareOne(null, s)} : S.sharing ? {label: "Share…", run: () => shareFlow(s)} : null,
+    {label: "Copy commit message", run: () => copyText(s.subject)},
+    {label: "Show in Finder", run: () => reveal(s.file)},
+    {label: "Select", run: () => { SEL = new Set([s.file]); selLast = i; renderSel(); }},
+    "-",
+    {label: "Delete…", danger: true, run: () => deleteOne(s)},
+  ].filter(Boolean));
+}
+document.addEventListener("click", () => $("#ctx").hidden = true);
+document.addEventListener("keydown", e => { if (e.key === "Escape") $("#ctx").hidden = true; });
+window.addEventListener("blur", () => $("#ctx").hidden = true);
+window.addEventListener("scroll", () => $("#ctx").hidden = true, true);
+// no browser menu ("Look Up", "Download Image"), except where you can type or select text
+document.addEventListener("contextmenu", e => {
+  if (!e.defaultPrevented && !e.target.closest("input, textarea, .doc, code")) e.preventDefault();
+});
 
 // ------------------------------------------------------------------ viewer
 function openViewer(kind, i) {
@@ -622,7 +737,10 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowLeft" && vi > 0) { vi--; fillViewer(); }
   if (e.key === "ArrowRight" && vi < L.length - 1) { vi++; fillViewer(); }
 });
-$$("dialog").forEach(d => d.addEventListener("click", e => { if (e.target === d || e.target.closest("[data-close]")) d.close(); }));
+$$("dialog").forEach(d => {
+  d.addEventListener("click", e => { if (!d.dataset.busy && (e.target === d || e.target.closest("[data-close]"))) d.close(); });
+  d.addEventListener("cancel", e => { if (d.dataset.busy) e.preventDefault(); });
+});
 function refreshViewer(file) {
   if (!$("#viewer").open) return;
   const i = list.findIndex(x => x.file === file);
@@ -653,9 +771,11 @@ async function shareFlow(s) {
 }
 $$(".sc").forEach(c => c.onchange = () => $("#shareGo").disabled = !$$(".sc").every(x => x.checked));
 function unshareOne(btn, s) {
+  if (!btn) toast("Removing from the team gallery…");
   return busy(btn, async () => { await api("unshare", {file: s.file}); toast("Removed from the team gallery ✓"); await load(); refreshViewer(s.file); });
 }
-function confirmDlg({title, text, go, typeDelete, also}) {
+// run: optional async action; the dialog stays open with a spinner until it is done
+function confirmDlg({title, text, go, typeDelete, also, run}) {
   return new Promise(res => {
     const d = $("#confirmDlg");
     $("#cTitle").textContent = title; $("#cText").textContent = text; $("#cGo").textContent = go;
@@ -663,16 +783,23 @@ function confirmDlg({title, text, go, typeDelete, also}) {
     $("#cAlsoWrap").hidden = !also; $("#cAlso").checked = !!(also && also.checked); $("#cAlsoLbl").textContent = also ? also.label : "";
     $("#cType").oninput = () => $("#cGo").disabled = $("#cType").value.trim() !== "DELETE";
     let ok = false;
-    $("#cGo").onclick = () => { ok = true; d.close(); };
+    $("#cGo").onclick = async () => {
+      if (run) {
+        d.dataset.busy = "1"; $("#confirmDlg [data-close]").disabled = true;
+        const done = await busy($("#cGo"), async () => { await run({also: $("#cAlso").checked}); return true; });
+        delete d.dataset.busy; $("#confirmDlg [data-close]").disabled = false;
+        if (!done) return;
+      }
+      ok = true; d.close();
+    };
     d.addEventListener("close", () => res(ok ? {also: $("#cAlso").checked} : null), {once: true});
     d.showModal();
   });
 }
-async function deleteOne(s) {
-  const r = await confirmDlg({title: "Delete this picture?", text: "This can't be undone.", go: "Delete",
-    also: s.shared ? {label: "Also remove it from the team gallery", checked: true} : null});
-  if (!r) return;
-  await busy(null, async () => { await api("forget", {file: s.file, alsoShared: !!r.also}); toast("Deleted ✓"); await load(); refreshViewer(s.file); });
+function deleteOne(s) {
+  return confirmDlg({title: "Delete this picture?", text: "This can't be undone.", go: "Delete",
+    also: s.shared ? {label: "Also remove it from the team gallery", checked: true} : null,
+    run: async r => { await api("forget", {file: s.file, alsoShared: !!r.also}); toast("Deleted ✓"); await load(); refreshViewer(s.file); }});
 }
 function showMedia(title, file, video) {
   $("#mTitle").textContent = title; $("#mPath").textContent = file;
@@ -708,7 +835,8 @@ function drawTeam() {
   TVIEW = TEAM.filter(r => (!p || r.name === p) && (r.subject + " " + r.name).toLowerCase().includes(q));
   $("#tcount").textContent = TEAM.length ? TVIEW.length + (TVIEW.length === 1 ? " picture" : " pictures") : "";
   $("#teamEmpty").hidden = TEAM.length > 0;
-  $("#tgrid").replaceChildren(...TVIEW.map((r, i) => h("figure", {class: "shot", onclick: () => openViewer("team", i)},
+  $("#tgrid").replaceChildren(...TVIEW.map((r, i) => h("figure", {class: "shot", onclick: () => openViewer("team", i),
+      oncontextmenu: e => menu(e, [{label: "Open", run: () => openViewer("team", i)}, {label: "Copy commit message", run: () => copyText(r.subject)}])},
     r.mine ? h("span", {class: "badge"}, "you") : null,
     h("img", {src: src(r.file), loading: "lazy", alt: r.subject}),
     h("figcaption", {},
@@ -729,7 +857,7 @@ async function loadDevices(sel) {
   } catch (e) { toast(e, true); }
 }
 function renderSettings() {
-  loadUpdate();
+  loadUpdate(); renderFolders();
   $("#s-hook").checked = S.hookGlobal;
   $("#s-hook").disabled = !S.configHooks;
   $("#hookHint").textContent = S.configHooks ? "In every repo on this computer."
@@ -745,7 +873,7 @@ function renderSettings() {
     h("span", {class: "nm"}, r.repo),
     h("span", {class: "st"}, r.show == null ? "not asked yet" : r.show ? "→ " + r.folder : "→ other-repos"),
     h("input", {type: "checkbox", class: "switch", checked: !!r.show, "aria-label": "Show " + r.repo + " by name",
-      onchange: e => busy(null, async () => { await api("set_repo_choice", {repo: r.repo, show: e.target.checked}); toast("Saved ✓"); PREV.clear(); rSig = ""; await load(); })}))));
+      onchange: e => busy(e.target, async () => { await api("set_repo_choice", {repo: r.repo, show: e.target.checked}); toast("Saved ✓"); PREV.clear(); rSig = ""; await load(); })}))));
   if (!(S.repos || []).length) $("#repoList").replaceChildren(h("span", {class: "count"}, "No repos yet."));
   for (const el of $$("[data-key]")) {
     if (document.activeElement === el) continue;
@@ -755,6 +883,23 @@ function renderSettings() {
   const dev = $("#s-device");
   if (!devicesLoaded && cfg("device")) { dev.replaceChildren(h("option", {value: cfg("device")}, cfg("device"))); dev.value = cfg("device"); }
 }
+async function renderFolders() {
+  const f = await api("folders").catch(() => []);
+  $("#folderList").replaceChildren(...f.map(x => h("div", {class: "repo-row"}, h("span", {class: "nm"}, x),
+    h("button", {class: "btn", onclick: e => busy(e.currentTarget, async () => {
+      await api("set_folders", {folders: f.filter(y => y !== x)}); toast("Removed ✓"); await renderFolders();
+    })}, "Remove"))));
+  if (!f.length) $("#folderList").replaceChildren(h("span", {class: "count"}, "No folder set – photos in every repo."));
+}
+$("#addFolderBtn").onclick = async e => {
+  const btn = e.currentTarget;
+  const p = await TAURI.dialog.open({directory: true, title: "Take photos only in repos inside this folder"});
+  if (p) await busy(btn, async () => {
+    const f = await api("folders");
+    if (!f.includes(p)) await api("set_folders", {folders: [...f, p]});
+    toast("Saved ✓"); await renderFolders();
+  });
+};
 async function save(key, value, label) {
   try { await api("set_config", {key, value}); toast((label || "Saved") + " ✓"); await load(); }
   catch (e) { toast(e, true); }
@@ -768,7 +913,7 @@ $("#s-auto").addEventListener("click", async e => {
   if (await confirmDlg({title: "Share every photo automatically?", text: "Every commit photo goes to the team gallery without a preview. Nobody checks who is in the background or what the commit message says.", go: "Turn on"}))
     save("share.auto", "true");
 });
-$("#s-hook").onchange = e => busy(null, async () => {
+$("#s-hook").onchange = e => busy(e.target, async () => {
   await api(e.target.checked ? "enable_global" : "disable_global"); toast(e.target.checked ? "On ✓" : "Turned off ✓"); await load();
 }).then(load);
 $$("[data-pause]").forEach(b => b.onclick = () => busy(b, async () => { await api("pause", {minutes: +b.dataset.pause}); await load(); }));
@@ -776,12 +921,10 @@ $("#s-device").onfocus = () => { if (!devicesLoaded) { devicesLoaded = true; loa
 $("#s-device").onchange = e => save("device", e.target.value, "Camera saved");
 $("#s-delay").oninput = e => $("#delayVal").textContent = e.target.value + " s";
 $("#s-delay").onchange = e => save("delay", e.target.value);
-$("#s-login").onchange = e => busy(null, async () => { await api("set_autostart", {on: e.target.checked}); await load(); });
+$("#s-login").onchange = e => busy(e.target, async () => { await api("set_autostart", {on: e.target.checked}); await load(); });
 $("#cliBtn").onclick = e => busy(e.currentTarget, async () => toast("Installed: " + await api("install_cli")));
-$("#disconnectBtn").onclick = async () => {
-  if (!await confirmDlg({title: "Stop sharing from this computer?", text: "Your pictures already in the team gallery stay there. Use Privacy › Unshare all to remove them.", go: "Disconnect"})) return;
-  await busy(null, async () => { await api("disconnect_sharing"); toast("Disconnected ✓"); await load(); });
-};
+$("#disconnectBtn").onclick = () => confirmDlg({title: "Stop sharing from this computer?", text: "Your pictures already in the team gallery stay there. Use Privacy › Unshare all to remove them.", go: "Disconnect",
+  run: async () => { await api("disconnect_sharing"); toast("Disconnected ✓"); await load(); }});
 
 // ------------------------------------------------------------------ updates
 let U = null;
@@ -826,18 +969,11 @@ function renderPrivacy() {
   $("#p-count").textContent = (n === 1 ? "1 picture" : n + " pictures") + " shared from this computer.";
   $("#unshareAllBtn").disabled = !S.sharing;
 }
-$("#unshareAllBtn").onclick = async e => {
-  const btn = e.currentTarget;
-  if (!await confirmDlg({title: "Remove all your shared pictures?", text: "Your folder in " + S.shareLabel + " is deleted, including pictures shared from other computers. Local pictures stay.", go: "Unshare all"})) return;
-  await busy(btn, async () => { await api("unshare", {file: null}); toast("All your shared pictures are gone ✓"); await load(); });
-};
-$("#forgetAllBtn").onclick = async e => {
-  const btn = e.currentTarget;
-  const r = await confirmDlg({title: "Delete everything?", text: "All pictures on this computer are deleted. This can't be undone.", go: "Delete all", typeDelete: true,
-    also: S.sharing ? {label: "Also remove my pictures from the team gallery", checked: false} : null});
-  if (!r) return;
-  await busy(btn, async () => { await api("forget", {file: null, alsoShared: !!r.also}); toast("Everything deleted ✓"); await load(); });
-};
+$("#unshareAllBtn").onclick = () => confirmDlg({title: "Remove all your shared pictures?", text: "Your folder in " + S.shareLabel + " is deleted, including pictures shared from other computers. Local pictures stay.", go: "Unshare all",
+  run: async () => { await api("unshare", {file: null}); toast("All your shared pictures are gone ✓"); await load(); }});
+$("#forgetAllBtn").onclick = () => confirmDlg({title: "Delete everything?", text: "All pictures on this computer are deleted. This can't be undone.", go: "Delete all", typeDelete: true,
+  also: S.sharing ? {label: "Also remove my pictures from the team gallery", checked: false} : null,
+  run: async r => { await api("forget", {file: null, alsoShared: !!r.also}); toast("Everything deleted ✓"); await load(); }});
 
 // ------------------------------------------------------------------ generic actions
 document.addEventListener("click", e => {
@@ -851,7 +987,11 @@ document.addEventListener("click", e => {
 });
 
 // ------------------------------------------------------------------ review (hot or not)
-const reviewQueue = () => S.shots.filter(s => !s.shared && !s.private);
+// Swipe right uploads in the background (one after another), so the next card is ready at once.
+const PENDING = new Set();
+let upChain = Promise.resolve();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const reviewQueue = () => S.shots.filter(s => !s.shared && !s.private && !PENDING.has(s.file));
 const PREV = new Map();           // file → preview path (exactly what gets uploaded)
 let RHIST = [], rBusy = false, rSig = "";
 const consented = () => { try { return localStorage.getItem("lolReviewConsent") === "1"; } catch { return false; } };
@@ -866,7 +1006,7 @@ function renderReview() {
   $("#reviewDone").hidden = !S.sharing || q.length > 0;
   $("#rUndo2").hidden = !RHIST.length;
   $("#rcTarget").textContent = S.shareLabel; $("#rcName").textContent = cfg("share.name");
-  $("#rHint").textContent = "→ share to " + S.shareLabel + "   ·   ← keep private";
+  $("#rHint").textContent = "→ share to " + S.shareLabel + "   ·   ← keep private" + (PENDING.size ? "   ·   uploading " + PENDING.size + "…" : "");
   $("#rLeft").textContent = q.length + " left";
   $("#rUndo").disabled = !RHIST.length;
   const sig = q.slice(0, 3).map(s => s.file).join("|");
@@ -938,9 +1078,9 @@ function updateRepoAsk() {
   $("#rHot").disabled = undecided;
   $("#reviewMain").classList.toggle("asking", !$("#repoAsk").hidden);
 }
-async function answerRepo(show) {
+async function answerRepo(show, btn) {
   const s = topShot(); if (!s) return;
-  await busy(null, async () => {
+  await busy(btn, async () => {
     await api("set_repo_choice", {repo: s.repo, show});
     S.repos = await api("repo_choices");
     // previews of this repo change (blurred or not): drop them and redraw
@@ -948,8 +1088,8 @@ async function answerRepo(show) {
     rSig = ""; renderReview(); renderSettings(); renderPrivacy();
   });
 }
-$("#askShow").onclick = () => answerRepo(true);
-$("#askHide").onclick = () => answerRepo(false);
+$("#askShow").onclick = e => answerRepo(true, e.currentTarget);
+$("#askHide").onclick = e => answerRepo(false, e.currentTarget);
 async function decide(hot) {
   const card = $("#stack").lastElementChild;
   if (!card || rBusy) return;
@@ -961,10 +1101,19 @@ async function decide(hot) {
   card.style.opacity = "0";
   card.querySelector(hot ? ".stamp.hot" : ".stamp.not").style.opacity = 1;
   try {
-    await Promise.all([hot ? api("share_shot", {file}) : api("set_private", {file, private: true}), new Promise(r => setTimeout(r, 260))]);
-    if (shot) { if (hot) shot.shared = true; else shot.private = true; }
-    RHIST.push({file, hot});
-    if (hot) toast("🔥 Shared with your team");
+    if (hot) {
+      PENDING.add(file);
+      const job = upChain = upChain.then(() => api("share_shot", {file}))
+        .then(() => { const s = S.shots.find(x => x.file === file); if (s) s.shared = true; toast("🔥 Shared with your team"); })
+        .catch(e => { RHIST = RHIST.filter(x => x.file !== file); toast("Not shared – “" + (shot ? shot.subject : file) + "”: " + e, true); })
+        .finally(() => { PENDING.delete(file); rSig = ""; renderReview(); drawShots(); renderPrivacy(); });
+      RHIST.push({file, hot, job});
+      await sleep(260);
+    } else {
+      await Promise.all([api("set_private", {file, private: true}), sleep(260)]);
+      if (shot) shot.private = true;
+      RHIST.push({file, hot});
+    }
   } catch (e) {
     toast(e, true); snapBack(card); card.style.opacity = "";
   } finally {
@@ -975,6 +1124,7 @@ async function undo() {
   const last = RHIST.pop(); if (!last || rBusy) return;
   rBusy = true;
   try {
+    if (last.job) { toast("Waiting for the upload…"); await last.job; }
     if (last.hot) await api("unshare", {file: last.file}); else await api("set_private", {file: last.file, private: false});
     const shot = S.shots.find(s => s.file === last.file);
     if (shot) { shot.shared = false; shot.private = false; }
@@ -1037,7 +1187,9 @@ function md(text) {
 async function openPrivacy() {
   try {
     $("#docBody").innerHTML = md(await api("privacy_doc"));
-    $("#docDlg").showModal(); $("#docDlg .doc").scrollTop = 0;
+    $("#docDlg").showModal();
+    const doc = $("#docDlg .doc"); doc.focus(); doc.scrollTop = 0;
+    requestAnimationFrame(() => doc.scrollTop = 0);
   } catch (e) { toast(e, true); }
 }
 $("#docWeb").onclick = () => TAURI.opener.openUrl(PRIVACY_URL).catch(e => toast(e, true));
@@ -1092,7 +1244,7 @@ function wzEnableState() {
   if (!S.configHooks) $("#wzEnableD").textContent = "Needs git 2.54 or newer – you have " + S.gitVersion + ". Update git, then come back.";
   $("#wzEnable").disabled = !S.configHooks;
 }
-$("#wzEnable").onclick = e => busy(null, async () => {
+$("#wzEnable").onclick = e => busy(e.currentTarget, async () => {
   if (!S.hookGlobal) await api("enable_global"); await load(); wzEnableState();
 });
 
@@ -1106,13 +1258,19 @@ async function wzTeam() {
     h("span", {class: "ic"}, "🟡"),
     h("span", {}, h("div", {class: "t"}, f.name), h("div", {class: "d"}, "Shared drive · " + f.account + " · no sign-in needed")),
     h("span", {class: "go"}, "›"))));
-  if (!folders.length && S.platform === "macos") $("#wzGoogleD").textContent = "Google Drive for desktop isn't installed – sign in here instead.";
+  const rc = await api("rclone_status").catch(() => ({}));
+  $("#wzGoogle .t").textContent = rc.connected ? "Google account" : "Sign in with Google";
+  $("#wzGoogleD").textContent = rc.connected ? "Already signed in – pick another shared drive."
+    : rc.client === "none" ? "Needs a Google client from your admin. Drive for desktop doesn't."
+    : !folders.length && S.platform === "macos" ? "Google Drive for desktop isn't installed – sign in here instead."
+    : "Opens your browser. Then pick a shared drive.";
 }
 function wzUseFolder(btn, path, label) {
-  return busy(btn, async () => { await api("use_folder", {path, label}); await wzConnected(label); });
+  return busy(btn, async () => { await api("use_folder", {path, label}); await wzConnected(); });
 }
-async function wzConnected(label) {
+async function wzConnected() {
   await load();
+  const label = S.shareLabel;
   $("#wzTeamPick").hidden = true; $("#wzTeamName").hidden = false; $("#wzTeamSave").hidden = false; $("#wzTeamSkip").hidden = true;
   $("#wzTeamOk").textContent = "✓ Connected to " + label;
   $("#wzName").value = cfg("share.name") || await api("first_name");
@@ -1138,14 +1296,47 @@ $("#wzGoogle").onclick = e => busy(e.currentTarget, async () => {
               : h("button", {class: "btn link", onclick: () => TAURI.opener.openUrl("https://rclone.org/downloads/")}, "Download rclone"));
     return;
   }
-  box.replaceChildren(h("b", {}, "Waiting for Google…"), "Finish the sign-in in your browser, then come back here.");
-  const drives = await api("rclone_connect");
+  if (st.client === "none") return clientForm(box, false);
+  box.replaceChildren(...(st.connected
+    ? [h("b", {}, "Loading the shared drives of your Google account…")]
+    : [h("b", {}, "Google is open in your browser"), "Allow access there, then come back – this page continues by itself. ",
+       h("button", {class: "btn link", onclick: () => api("rclone_cancel")}, "Cancel"),
+       h("div", {class: "count", style: "margin-top:6px"}, "Google says the app is restricted to another organization? Your team needs its own Google client: ",
+         h("button", {class: "btn link", onclick: () => { api("rclone_cancel"); clientForm(box, true); }}, "Use our own client…"))]));
+  let drives;
+  try { drives = await api("rclone_connect"); }
+  catch (err) { box.hidden = true; if (String(err).includes("cancelled")) return; throw err; }
   if (!drives.length) { box.replaceChildren(h("b", {}, "No shared drives"), "Your Google account has no shared drives. Ask your admin to create one, e.g. “lolcommits”, and add your team."); return; }
-  box.replaceChildren(h("b", {}, "Pick a shared drive"), h("div", {class: "choice", style: "margin-top:8px"},
+  box.replaceChildren(h("b", {}, "Pick a shared drive"), "The pictures go to the folder “lolcommits” in it.", h("div", {class: "choice", style: "margin-top:8px"},
     ...drives.map(d => h("button", {class: "opt", onclick: ev => busy(ev.currentTarget, async () => {
-      await api("rclone_use", {id: d.id, name: d.name}); await wzConnected("Google Drive › " + d.name);
+      box.firstChild.textContent = "Checking that lolcommits can write to “" + d.name + "”…";
+      await api("rclone_use", {id: d.id, name: d.name}); await wzConnected();
     })}, h("span", {class: "ic"}, "🟡"), h("span", {}, h("div", {class: "t"}, d.name)), h("span", {class: "go"}, "›")))));
 });
+// Google sign-in needs an OAuth client of the team's company (Desktop app, Drive API).
+// Builds from GitHub come with entrecode's; other teams enter theirs here.
+function clientForm(box, other) {
+  const id = h("input", {type: "text", placeholder: "Client ID (…apps.googleusercontent.com)", autocomplete: "off", spellcheck: "false"});
+  const secret = h("input", {type: "text", placeholder: "Client secret", autocomplete: "off", spellcheck: "false"});
+  const field = "width:100%;margin:4px 0;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--card)";
+  id.style.cssText = secret.style.cssText = field;
+  box.hidden = false;
+  box.replaceChildren(
+    h("b", {}, other ? "Your team's own Google client" : "Google sign-in needs your team's Google client"),
+    "Your Google Workspace admin creates it once in the Google Cloud console – a “Desktop app” client with the Google Drive API – and shares the ID and secret with the team. ",
+    h("button", {class: "btn link", onclick: () => TAURI.opener.openUrl(CLIENT_HELP_URL)}, "How to create it"),
+    h("div", {style: "margin-top:8px"}, id, secret),
+    h("div", {class: "row", style: "margin-top:6px"},
+      h("button", {class: "btn primary", onclick: ev => busy(ev.currentTarget, async () => {
+        if (!id.value.trim().endsWith(".apps.googleusercontent.com")) throw "That doesn't look like a Google client ID (…apps.googleusercontent.com).";
+        if (!secret.value.trim()) throw "Please enter the client secret too.";
+        await api("set_config", {key: "share.googleClientId", value: id.value.trim()});
+        await api("set_config", {key: "share.googleClientSecret", value: secret.value.trim()});
+        $("#wzGoogle").click();
+      })}, "Save and sign in")),
+    h("div", {class: "count", style: "margin-top:8px"}, "No admin at hand? Google Drive for desktop needs no client and no sign-in here – install it, then come back."));
+  id.focus();
+}
 $("#wzFinish").onclick = e => busy(e.currentTarget, async () => {
   await api("set_autostart", {on: $("#wzLogin").checked}).catch(() => {});
   await api("finish_setup");
@@ -1157,6 +1348,7 @@ function route(v) {
   view = ["shots", "review", "team", "settings", "privacy"].includes(v) ? v : "shots";
   $$("main > section").forEach(s => s.hidden = s.id !== "v-" + view);
   $$("nav a").forEach(a => a.classList.toggle("on", a.dataset.v === view));
+  window.scrollTo(0, 0);
   if (view === "team") loadTeam(true, $("#syncBtn"));
 }
 $$("nav a").forEach(a => a.onclick = () => route(a.dataset.v));
@@ -1169,6 +1361,7 @@ $$("nav a").forEach(a => a.onclick = () => route(a.dataset.v));
   ev.listen("shots-changed", () => { if (!document.querySelector("dialog[open]")) load(); });
   ev.listen("navigate", e => { if ($("#wizard").hidden) route(e.payload); });
   ev.listen("update-changed", e => renderUpdate(e.payload));
+  ev.listen("forget-progress", e => onProgress && onProgress(e.payload));
   ev.listen("show-file", e => showMedia("Test photo", e.payload));
 
 })();
