@@ -20,14 +20,15 @@ html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 -apple-sy
 input,textarea{-webkit-user-select:text;user-select:text}
 button,input,select{font:inherit;color:inherit}
 a{color:inherit}
+.i{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-.2em}
 .impact{font-family:Impact,"Anton","Arial Narrow Bold",sans-serif;font-weight:400;letter-spacing:.3px}
-[id]{scroll-margin-top:84px}
+[id]{scroll-margin-top:calc(var(--top-h,56px) + 28px)}
 .top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:10px 18px;flex-wrap:wrap}
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:10px 18px}
 .brand{font-size:26px;line-height:1}
 .brand small{font:500 11px system-ui;color:var(--mut);margin-left:6px;letter-spacing:0}
-nav{display:flex;gap:3px;background:var(--card2);padding:3px;border-radius:10px}
-nav a{padding:5px 13px;border-radius:8px;text-decoration:none;color:var(--mut);font-weight:600;font-size:13px;cursor:default}
+nav{display:flex;gap:3px;flex:none;background:var(--card2);padding:3px;border-radius:10px}
+nav a{padding:5px 13px;white-space:nowrap;border-radius:8px;text-decoration:none;color:var(--mut);font-weight:600;font-size:13px;cursor:default}
 nav a.on{background:var(--card);color:var(--fg)}
 .spacer{flex:1}
 .btn{border:1px solid var(--line);background:var(--card);padding:7px 14px;border-radius:9px;cursor:default;font-weight:600;font-size:13px;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
@@ -42,6 +43,12 @@ nav a.on{background:var(--card);color:var(--fg)}
 #updInstall{font-variant-numeric:tabular-nums;min-width:190px;justify-content:center}
 .btn.busy::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;border-radius:50%;border:2px solid var(--mut);border-top-color:transparent;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(1turn)}}
+/* skeleton: shimmering placeholder while a picture or list is loading */
+.skel{background:linear-gradient(100deg,var(--card2) 40%,color-mix(in srgb,var(--card2) 55%,var(--card)) 50%,var(--card2) 60%) 0 0/300% 100%!important;animation:shimmer 1.3s linear infinite}
+@keyframes shimmer{from{background-position:100% 0}to{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+.skel-line{height:12px;border-radius:6px;margin:6px 0}
+.shot.ph{pointer-events:none}.shot.ph .pic{aspect-ratio:16/9}
 main{max-width:1440px;margin:auto;padding:18px}
 section[hidden],[hidden]{display:none!important}
 .banner{display:flex;gap:12px;align-items:center;background:color-mix(in srgb,var(--acc) 22%,var(--card));border-radius:12px;padding:10px 14px;margin-bottom:14px;font-weight:500}
@@ -51,15 +58,18 @@ section[hidden],[hidden]{display:none!important}
 .bar input[type=search],select,.field input:not([type=checkbox]):not([type=range]){background:var(--card);border:1px solid var(--line);border-radius:9px;padding:0 11px;height:34px;font-size:13px}
 select{-webkit-appearance:none;appearance:none;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
 .bar .btn{height:34px;padding-top:0;padding-bottom:0}
-.bar input[type=search]{min-width:220px}
+.bar input[type=search]{min-width:160px;flex:0 1 220px}
+.bar select{max-width:220px;text-overflow:ellipsis}
 .count{color:var(--mut);font-size:13px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
 .shot{margin:0;background:var(--card);border-radius:var(--r);overflow:hidden;border:1px solid var(--line);position:relative;transition:transform .15s}
 .shot:hover{transform:translateY(-2px)}
 .shot img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--card2)}
 .shot figcaption{padding:9px 13px 11px}
-.shot .msg{font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.shot .msg{font-weight:600;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .shot .meta{color:var(--mut);font-size:12px;margin-top:2px;display:flex;justify-content:space-between;gap:8px}
+.shot .meta span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shot .meta span:last-child{flex:none;white-space:nowrap}
 .badge{position:absolute;top:9px;left:9px;background:var(--acc);color:var(--acc-fg);font-size:10px;font-weight:800;padding:3px 8px;border-radius:99px;letter-spacing:.3px;text-transform:uppercase}
 .empty{text-align:center;padding:70px 20px;color:var(--mut)}
 .empty h2{color:var(--fg);font-size:38px;margin:0 0 8px}
@@ -83,9 +93,9 @@ code{font:12px ui-monospace,Menlo,monospace;word-break:break-all;-webkit-user-se
 ul.facts{margin:0;padding-left:18px}ul.facts li{margin:4px 0}
 dialog{border:0;padding:0;background:transparent;color:var(--fg);max-width:min(1200px,96vw);max-height:96vh}
 dialog::backdrop{background:#000000d0}
-.viewer{display:flex;flex-direction:column;gap:12px}
-.viewer img,.viewer video{max-width:100%;max-height:72vh;border-radius:12px;display:block;margin:auto;background:#000}
-.panel{background:var(--card);border-radius:var(--r);padding:14px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.viewer{display:flex;flex-direction:column;gap:12px;max-height:calc(96vh - 4px)}
+.viewer img,.viewer video{max-width:100%;max-height:72vh;min-height:0;flex:0 1 auto;object-fit:contain;border-radius:12px;display:block;margin:auto;background:#000}
+.panel{flex:none;background:var(--card);border-radius:var(--r);padding:14px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .panel .txt{flex:1;min-width:240px}
 .panel .msg{font-weight:700;font-size:16px}
 .panel .meta{color:var(--mut);font-size:12px}
@@ -124,13 +134,13 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 #ctx hr{border:0;border-top:1px solid var(--line);margin:4px 2px}
 .review{display:flex;flex-direction:column;align-items:center;gap:16px}
 .review .hint{color:var(--mut);font-size:13px;text-align:center}
-.stack{--w:min(600px,92vw,calc((100vh - 330px) * 16 / 9));position:relative;width:var(--w);height:calc(var(--w) * 9 / 16 + 92px)}
+.stack{--chrome:calc(var(--top-h,56px) - 56px + var(--ban-h,0px));--w:max(min(320px,92vw),min(600px,92vw,calc((100vh - 360px - var(--chrome)) * 16 / 9)));position:relative;margin-bottom:28px;width:var(--w);height:calc(var(--w) * 9 / 16 + 72px)}
 .rcard{position:absolute;inset:0;background:var(--card);border-radius:18px;border:1px solid var(--line);overflow:hidden;touch-action:none;transition:transform .25s ease,opacity .25s ease;transform-origin:50% 90%}
 .rcard.drag{transition:none;cursor:grabbing}
 .rcard .pic{width:100%;aspect-ratio:16/9;background:var(--card2) center/cover no-repeat;display:grid;place-items:center;color:var(--mut)}
 .rcard .info{padding:12px 16px}
 .rcard .msg{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rcard .meta{color:var(--mut);font-size:12px;margin-top:3px}
+.rcard .meta{color:var(--mut);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rcard.back1{transform:translateY(14px) scale(.95);opacity:.9}
 .rcard.back2{transform:translateY(28px) scale(.9);opacity:.6}
 .stamp{position:absolute;top:24px;padding:2px 12px;border:5px solid;border-radius:12px;font-size:44px;letter-spacing:3px;opacity:0;pointer-events:none;background:#0004}
@@ -141,17 +151,17 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .round:hover:not(:disabled){transform:scale(1.08)}
 .round:disabled{opacity:.35}
 .round.small{width:46px;height:46px;font-size:18px}
-.round.not{color:#ff4d5e}.round.hot{color:#21d36b}
+.round.not{color:#ff4d5e}.round.hot{color:#21d36b}.round .i{width:28px;height:28px;stroke-width:2.5}.round.small .i{width:20px;height:20px}.round.hot .i{fill:currentColor}
 .repo-row{display:flex;align-items:center;gap:10px;padding:6px 0}
 .repo-row .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.repo-row .st{color:var(--mut);font-size:12px}
-.review.asking .stack{--w:min(600px,92vw,calc((100vh - 410px) * 16 / 9))}
-.ask{width:min(600px,92vw,calc((100vh - 410px) * 16 / 9));min-width:min(420px,92vw);background:color-mix(in srgb,var(--acc) 22%,var(--card));border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.repo-row .st{color:var(--mut);font-size:12px;min-width:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.review.asking .stack{--w:max(min(320px,92vw),min(600px,92vw,calc((100vh - 440px - var(--chrome)) * 16 / 9)))}
+.ask{width:max(min(320px,92vw),min(600px,92vw,calc((100vh - 440px - var(--ban-h,0px) - var(--top-h,56px) + 56px) * 16 / 9)));min-width:min(420px,92vw);background:color-mix(in srgb,var(--acc) 22%,var(--card));border-radius:14px;padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .ask .q{flex:1;min-width:220px}
 .consent{width:min(560px,92vw);background:var(--card);border-radius:18px;border:1px solid var(--line);padding:22px 24px}
 .consent h2{font-size:34px;margin:0 0 10px}
 .consent .rule{display:flex;gap:12px;align-items:flex-start;margin:10px 0}
-.consent .rule b{font-size:22px;line-height:1}
+.consent .rule .i{width:22px;height:22px;margin-top:1px;color:var(--mut)}
 
 /* ---------------------------------------------------------------- wizard */
 #wizard{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;overflow:auto}
@@ -165,7 +175,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .hero{width:120px;height:120px;border-radius:28px;background:var(--acc);display:grid;place-items:center;margin-bottom:18px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .col{background:var(--card);border-radius:var(--r);padding:16px 18px;border:1px solid var(--line)}
-.col h4{margin:0 0 8px;font-size:15px}
+.col h4{margin:0 0 8px;font-size:15px;display:flex;gap:8px;align-items:center}
 .col ul{margin:0;padding-left:18px;color:var(--mut)}.col li{margin:4px 0}
 .note{margin-top:14px;background:color-mix(in srgb,var(--acc) 20%,var(--card));border-radius:var(--r);padding:14px 16px}
 .note b{display:block;margin-bottom:3px}
@@ -179,15 +189,17 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .opt.busy .go::after{content:"";position:absolute;inset:0;margin:auto;width:15px;height:15px;border-radius:50%;border:2px solid var(--mut);border-top-color:transparent;animation:spin .8s linear infinite}
 .opt:hover:not(:disabled){border-color:var(--mut)}
 .opt.sel{border-color:var(--fg)}
-.opt .ic{width:38px;height:38px;border-radius:10px;background:var(--card2);display:grid;place-items:center;font-size:20px;flex:none}
+.opt .ic{width:38px;height:38px;border-radius:10px;background:var(--card2);display:grid;place-items:center;flex:none}.opt .ic .i{width:20px;height:20px}
 .opt .t{font-weight:700}.opt .d{color:var(--mut);font-size:12px}
 .opt .go{margin-left:auto;color:var(--mut)}
 .ok{color:var(--ok);font-weight:700}
 .sub-h{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px}
+@media (max-width:860px){.top{gap:10px;padding:10px 14px}nav a{padding:5px 9px}.brand small{display:none}}
 @media (max-width:760px){.cols,.cam{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<svg hidden aria-hidden="true"><symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol><symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 7.5h4M3 12h18M3 16.5h4M17 7.5h4M17 16.5h4"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></symbol><symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M6 16h.01M10 16h.01"/></symbol><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol></svg>
 <header class="top">
   <div class="brand impact">lolcommits<small id="ver"></small></div>
   <nav>
@@ -198,24 +210,24 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
     <a data-v="privacy">Privacy</a>
   </nav>
   <div class="spacer"></div>
-  <button class="btn primary" id="testBtn">📸 Test photo</button>
+  <button class="btn primary" id="testBtn"><svg class="i" aria-hidden="true"><use href="#i-camera"/></svg>Test photo</button>
 </header>
 
 <main>
-  <div class="banner" id="pauseBanner" hidden><span id="pauseText"></span><div class="spacer"></div><button class="btn" data-act="resume">Resume</button></div>
+  <div class="banner" id="pauseBanner" hidden><svg class="i" aria-hidden="true"><use href="#i-pause"/></svg><span id="pauseText"></span><div class="spacer"></div><button class="btn" data-act="resume">Resume</button></div>
   <div class="banner" id="offBanner" hidden><span>lolcommits is off – no photos are taken.</span><div class="spacer"></div><button class="btn primary" data-act="enable">Turn on</button></div>
   <div class="banner bad" id="errBanner" hidden><span id="errText"></span></div>
 
   <section id="v-shots">
-    <div class="bar">
+    <div class="bar" id="shotsBar" style="visibility:hidden">
       <select id="repoSel" aria-label="Repository"></select>
       <input id="q" type="search" placeholder="Search commit messages…" aria-label="Search">
       <span class="count" id="count"></span>
       <button class="btn" id="selectBtn">Select</button>
       <div class="spacer"></div>
-      <button class="btn" id="timelapseBtn">🎞 Timelapse</button>
+      <button class="btn" id="timelapseBtn"><svg class="i" aria-hidden="true"><use href="#i-film"/></svg>Timelapse</button>
       <select id="yearSel" aria-label="Year for Wrapped"></select>
-      <button class="btn" id="wrappedBtn">🗓 Wrapped</button>
+      <button class="btn" id="wrappedBtn"><svg class="i" aria-hidden="true"><use href="#i-calendar"/></svg><span id="wrappedLbl">Wrapped</span></button>
     </div>
     <div class="grid" id="grid"></div>
     <div class="selbar" id="selBar" hidden>
@@ -240,9 +252,9 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
     <div class="review" id="reviewConsent" hidden>
       <div class="consent">
         <h2 class="impact">hot or not?</h2>
-        <div class="rule"><b>👉</b><div><b style="font-size:14px">Swipe right – hot.</b> The picture is shared exactly as shown on the card: repo name blurred, no metadata, to <span id="rcTarget"></span> as “<span id="rcName"></span>”.</div></div>
-        <div class="rule"><b>👈</b><div><b style="font-size:14px">Swipe left – not.</b> It stays on this computer and won't be asked again.</div></div>
-        <div class="rule"><b>👀</b><div>Before you swipe right, check the background (anyone else in it?) and the commit message. You can undo the last swipe.</div></div>
+        <div class="rule"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg><div><b style="font-size:14px">Swipe right – hot.</b> The picture is shared exactly as shown on the card: repo name blurred, no metadata, to <span id="rcTarget"></span> as “<span id="rcName"></span>”.</div></div>
+        <div class="rule"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg><div><b style="font-size:14px">Swipe left – not.</b> It stays on this computer and won't be asked again.</div></div>
+        <div class="rule"><svg class="i" aria-hidden="true"><use href="#i-eye"/></svg><div>Before you swipe right, check the background (anyone else in it?) and the commit message. You can undo the last swipe.</div></div>
         <div style="margin-top:16px"><button class="btn primary big" id="rcGo">Let's go</button></div>
       </div>
     </div>
@@ -253,9 +265,9 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       </div>
       <div class="stack" id="stack"></div>
       <div class="rbtns">
-        <button class="round small" id="rUndo" title="Undo (⌘Z)">↶</button>
-        <button class="round not" id="rNot" title="Not – keep private (←)">✕</button>
-        <button class="round hot" id="rHot" title="Hot – share (→)">♥</button>
+        <button class="round small" id="rUndo" title="Undo (⌘Z)" aria-label="Undo"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg></button>
+        <button class="round not" id="rNot" title="Not – keep private (←)" aria-label="Not – keep private"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg></button>
+        <button class="round hot" id="rHot" title="Hot – share (→)" aria-label="Hot – share"><svg class="i" aria-hidden="true"><use href="#i-heart"/></svg></button>
         <span class="count" id="rLeft" style="width:46px;text-align:center"></span>
       </div>
       <div class="hint" id="rHint"></div>
@@ -263,7 +275,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
     <div class="empty" id="reviewDone" hidden>
       <h2 class="impact">all caught up</h2>
       <div>New photos show up here after your next commits.</div>
-      <div class="btns"><button class="btn" id="rUndo2">↶ Undo last swipe</button><button class="btn" onclick="route('team')">See the team gallery</button></div>
+      <div class="btns"><button class="btn" id="rUndo2"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Undo last swipe</button><button class="btn" onclick="route('team')">See the team gallery</button></div>
     </div>
   </section>
 
@@ -280,10 +292,10 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
         <span class="count" id="tcount"></span>
         <div class="spacer"></div>
         <span class="count" id="tlabel"></span>
-        <button class="btn" id="syncBtn">⟳ Refresh</button>
+        <button class="btn" id="syncBtn"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Refresh</button>
       </div>
       <div class="grid" id="tgrid"></div>
-      <div class="empty" id="teamEmpty" hidden><h2 class="impact">nothing here yet</h2><div>Share a shot from “My shots”.</div></div>
+      <div class="empty" id="teamEmpty" hidden><h2 class="impact">nothing here yet</h2><div>Swipe right in “Review” to share a shot.</div></div>
     </div>
   </section>
 
@@ -342,7 +354,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       <div class="card">
         <h3>App</h3><p class="sub">lolcommits lives in the menu bar. Closing this window keeps it running.</p>
         <div class="field"><label for="s-login">Start at login</label><input type="checkbox" class="switch" id="s-login"></div>
-        <div class="field"><label>Command line tool</label><button class="btn" id="cliBtn">Install `lolcommits` command</button>
+        <div class="field"><label>Command line tool</label><button class="btn" id="cliBtn">Install the lolcommits command</button>
           <div class="hint">Optional. Adds ~/.local/bin/lolcommits for gallery, timelapse and more in the terminal.</div></div>
         <div class="field"><label>Setup</label><button class="btn" data-act="wizard">Run setup again</button></div>
       </div>
@@ -397,9 +409,9 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       <h1 class="impact">fun, and fair</h1>
       <p class="lead">Photos of people are personal data. lolcommits keeps team spirit and the GDPR on the same side:</p>
       <div class="cols">
-        <div class="col"><h4>🔒 Stays with you</h4><ul>
+        <div class="col"><h4><svg class="i" aria-hidden="true"><use href="#i-lock"/></svg>Stays with you</h4><ul>
           <li>Every photo stays on this computer.</li><li>No upload, no cloud, no tracking.</li><li>Delete anything, any time.</li></ul></div>
-        <div class="col"><h4>🤝 If you share with your team</h4><ul>
+        <div class="col"><h4><svg class="i" aria-hidden="true"><use href="#i-users"/></svg>If you share with your team</h4><ul>
           <li>Voluntary – you pick every picture after a preview.</li><li>Date only, no times, no statistics per person.</li><li>Take it back with one click.</li></ul></div>
       </div>
       <div class="note"><b>Using it at work?</b>Pictures of colleagues are employee data. Before a team gallery starts, check with your data protection officer (and works council, if you have one) and agree how long team pictures are kept. <button class="btn link" data-act="privacy-doc">Read the privacy guide</button></div>
@@ -417,7 +429,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
             <p class="ok">✓ Camera allowed</p>
             <div class="sub-h">Camera</div><select id="wzDevice" style="width:100%"><option value="">Default</option></select>
             <div class="sub-h">Warm-up <span class="count" id="wzDelayVal"></span></div><input id="wzDelay" type="range" min="0" max="4" step="0.5" style="width:100%">
-            <div style="margin-top:14px"><button class="btn primary" id="wzTestBtn">📸 Take a test photo</button></div>
+            <div style="margin-top:14px"><button class="btn primary" id="wzTestBtn"><svg class="i" aria-hidden="true"><use href="#i-camera"/></svg>Take a test photo</button></div>
           </div>
           <p class="count" id="camDenied" hidden>No access. Open System Settings › Privacy &amp; Security › Camera and switch on lolcommits, then try again.</p>
         </div>
@@ -429,7 +441,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       <h1 class="impact">every commit, every repo</h1>
       <p class="lead">lolcommits hooks into git for all your repositories. Committing stays instant – the photo is taken in the background.</p>
       <div class="choice">
-        <button class="opt" id="wzEnable"><span class="ic">⚡️</span><span><div class="t">Take a photo on every commit</div><div class="d" id="wzEnableD">In every repo on this computer. Pause any time from the menu bar.</div></span><span class="go" id="wzEnableState">Turn on</span></button>
+        <button class="opt" id="wzEnable"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-zap"/></svg></span><span><div class="t">Take a photo on every commit</div><div class="d" id="wzEnableD">In every repo on this computer. Pause any time from the menu bar.</div></span><span class="go" id="wzEnableState">Turn on</span></button>
       </div>
       <p class="count" style="margin-top:12px">Note: git clients with their own built-in git (some GUI apps) may not trigger it. Terminal, VS Code, JetBrains and Apple git work.</p>
       <div class="nav"><button class="btn link" data-back>Back</button><button class="btn primary big" data-next>Next</button></div>
@@ -445,8 +457,8 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
         </div>
         <div class="sub-h">Other ways</div>
         <div class="choice">
-          <button class="opt" id="wzGoogle"><span class="ic">🔑</span><span><div class="t">Sign in with Google</div><div class="d" id="wzGoogleD">Opens your browser. Then pick a shared drive.</div></span><span class="go">›</span></button>
-          <button class="opt" id="wzFolder"><span class="ic">📁</span><span><div class="t">Choose a folder…</div><div class="d">A shared folder or network drive your team can reach.</div></span><span class="go">›</span></button>
+          <button class="opt" id="wzGoogle"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-key"/></svg></span><span><div class="t">Sign in with Google</div><div class="d" id="wzGoogleD">Opens your browser. Then pick a shared drive.</div></span><span class="go">›</span></button>
+          <button class="opt" id="wzFolder"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-folder"/></svg></span><span><div class="t">Choose a folder…</div><div class="d">A shared folder or network drive your team can reach.</div></span><span class="go">›</span></button>
         </div>
         <div id="wzRclone" hidden style="margin-top:14px" class="note"></div>
       </div>
@@ -470,7 +482,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       <h1 class="impact">you're all set</h1>
       <p class="lead">lolcommits now lives in your menu bar. When you commit, the camera icon flashes and the photo lands in your gallery. Click the icon to pause, share or open the gallery.</p>
       <div class="choice">
-        <label class="opt"><span class="ic">🚀</span><span><div class="t">Start at login</div><div class="d">So the menu bar icon is always there. Commits work either way.</div></span><input type="checkbox" class="switch go" id="wzLogin" checked></label>
+        <label class="opt"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-power"/></svg></span><span><div class="t">Start at login</div><div class="d">So the menu bar icon is always there. Commits work either way.</div></span><input type="checkbox" class="switch go" id="wzLogin" checked></label>
       </div>
       <div class="nav"><button class="btn primary big" id="wzFinish">Open my gallery</button></div>
     </div>
@@ -567,6 +579,22 @@ async function busy(btn, fn) {
   catch (e) { toast(e, true); }
   finally { group.forEach(b => b.disabled = false); if (btn) btn.classList.remove("busy"); }
 }
+// Line icon from the sprite at the top of <body>.
+function icon(name) {
+  const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"), use = document.createElementNS(NS, "use");
+  svg.setAttribute("class", "i"); svg.setAttribute("aria-hidden", "true"); use.setAttribute("href", "#i-" + name);
+  svg.append(use); return svg;
+}
+// Image that shimmers until it has loaded.
+function lazyImg(attrs) {
+  const img = h("img", {...attrs, class: "skel"});
+  const done = () => img.classList.remove("skel");
+  img.addEventListener("load", done); img.addEventListener("error", done);
+  return img;
+}
+// Placeholder cards for a grid that is still loading.
+const skelCards = n => Array.from({length: n}, () => h("figure", {class: "shot ph", "aria-hidden": "true"},
+  h("div", {class: "pic skel"}), h("figcaption", {}, h("div", {class: "skel skel-line", style: "width:70%"}), h("div", {class: "skel skel-line", style: "width:45%"}))));
 // Dates in the language of the interface (English), local time.
 const LOCALE = "en-GB";
 const fmtTs = ts => { const d = new Date(ts); return isNaN(d) ? ts : d.toLocaleString(LOCALE, {day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"}); };
@@ -583,10 +611,19 @@ async function load() {
 }
 function renderHeader() {
   $("#ver").textContent = S.version;
-  $("#pauseBanner").hidden = !S.pausedUntil; $("#pauseText").textContent = "⏸ " + pausedText();
+  $("#pauseBanner").hidden = !S.pausedUntil; $("#pauseText").textContent = pausedText();
   $("#offBanner").hidden = S.hookGlobal || !S.setupDone;
   $("#errBanner").hidden = !S.shareError; $("#errText").textContent = S.shareError;
+  measureChrome();
 }
+// Header and banner heights as CSS variables: anchor scroll offset and the review card size use them.
+function measureChrome() {
+  const root = document.documentElement.style;
+  root.setProperty("--top-h", $(".top").offsetHeight + "px");
+  root.setProperty("--ban-h", $$("main > .banner").filter(b => !b.hidden).reduce((a, b) => a + b.offsetHeight + 14, 0) + "px");
+}
+new ResizeObserver(measureChrome).observe($(".top"));
+addEventListener("resize", measureChrome);
 
 // ------------------------------------------------------------------ my shots
 function filteredShots() {
@@ -603,7 +640,8 @@ function renderShots() {
   $("#yearSel").replaceChildren(...years.map(y => h("option", {value: y}, y)));
   $("#yearSel").value = years.includes(cy) ? cy : (years[0] || "");
   $("#yearSel").hidden = years.length < 2;
-  $("#wrappedBtn").textContent = "🗓 Wrapped" + (years.length === 1 ? " " + years[0] : "");
+  $("#wrappedLbl").textContent = "Wrapped" + (years.length === 1 ? " " + years[0] : "");
+  $("#shotsBar").style.visibility = "";
   ["#timelapseBtn", "#wrappedBtn", "#selectBtn"].forEach(s => $(s).disabled = !S.shots.length);
   $("#timelapseBtn").title = S.ffmpeg ? "" : "Needs ffmpeg (brew install ffmpeg)";
   drawShots();
@@ -618,10 +656,10 @@ function drawShots() {
       onclick: e => cardClick(e, i), oncontextmenu: e => shotMenu(e, s, i)},
     h("span", {class: "tick"}, "✓"),
     s.shared ? h("span", {class: "badge"}, "shared") : s.private ? h("span", {class: "badge priv"}, "private") : null,
-    h("img", {src: src(s.file), loading: "lazy", alt: s.subject}),
+    lazyImg({src: src(s.file), loading: "lazy", alt: s.subject}),
     h("figcaption", {},
       h("div", {class: "msg"}, s.subject),
-      h("div", {class: "meta"}, h("span", {}, s.repo + " · " + s.branch), h("span", {}, fmtTs(s.ts)))))));
+      h("div", {class: "meta"}, h("span", {title: s.repo + " · " + s.branch}, s.repo + " · " + s.branch), h("span", {}, fmtTs(s.ts)))))));
 }
 $("#repoSel").onchange = $("#q").oninput = drawShots;
 
@@ -752,7 +790,7 @@ function refreshViewer(file) {
 // ------------------------------------------------------------------ actions
 const repoChoice = repo => (S.repos.find(r => r.repo === repo) || {}).show;   // true / false / null
 async function askRepo(repo) {
-  const r = await confirmDlg({title: "Show “" + repo + "” by name?", go: "Show name",
+  const r = await confirmDlg({title: "Show “" + repo + "” by name?", go: "Show name", safe: true,
     text: "Your team would see the repo name, and the picture goes to the folder “" + repo + "”. Choose “Cancel” to keep it hidden: folder “other-repos”, name blurred. Asked once per repo, changeable in Settings."});
   await api("set_repo_choice", {repo, show: !!r});
   S.repos = await api("repo_choices");
@@ -761,25 +799,35 @@ async function shareFlow(s) {
   if (repoChoice(s.repo) == null) await askRepo(s.repo);
   const dlg = $("#shareDlg");
   $$(".sc").forEach(c => c.checked = false); $("#shareGo").disabled = true;
-  $("#shareImg").removeAttribute("src");
+  shareReady = false;
+  const img = $("#shareImg"); img.removeAttribute("src"); img.classList.add("skel");
   $("#shareInfo").textContent = "This is exactly what goes to " + S.shareLabel + " as “" + cfg("share.name") + "”"
     + (repoChoice(s.repo) ? " in the folder “" + s.repo + "”, without metadata." : " in “other-repos” – repo name blurred, no metadata.");
-  dlg.showModal();
-  await busy(null, async () => { $("#shareImg").src = src(await api("preview", {file: s.file}), 1); });
   $("#shareGo").onclick = () => busy($("#shareGo"), async () => {
     await api("share_shot", {file: s.file}); dlg.close(); toast("Shared ✓"); await load(); refreshViewer(s.file);
   });
+  dlg.showModal();
+  await busy(null, async () => {
+    img.src = src(await api("preview", {file: s.file}), 1);
+    await img.decode().catch(() => {});
+    shareReady = true; shareCheck();
+  });
+  img.classList.remove("skel");
 }
-$$(".sc").forEach(c => c.onchange = () => $("#shareGo").disabled = !$$(".sc").every(x => x.checked));
+let shareReady = false;
+// Share needs both boxes ticked and the preview on screen: you confirm what you have seen.
+const shareCheck = () => $("#shareGo").disabled = !shareReady || !$$(".sc").every(x => x.checked);
+$$(".sc").forEach(c => c.onchange = shareCheck);
 function unshareOne(btn, s) {
   if (!btn) toast("Removing from the team gallery…");
   return busy(btn, async () => { await api("unshare", {file: s.file}); toast("Removed from the team gallery ✓"); await load(); refreshViewer(s.file); });
 }
 // run: optional async action; the dialog stays open with a spinner until it is done
-function confirmDlg({title, text, go, typeDelete, also, run}) {
+// safe: the action deletes nothing, so the button is the normal yellow one instead of red
+function confirmDlg({title, text, go, typeDelete, also, run, safe}) {
   return new Promise(res => {
     const d = $("#confirmDlg");
-    $("#cTitle").textContent = title; $("#cText").textContent = text; $("#cGo").textContent = go;
+    $("#cTitle").textContent = title; $("#cText").textContent = text; $("#cGo").textContent = go; $("#cGo").className = safe ? "btn primary" : "btn danger solid";
     $("#cTypeWrap").hidden = !typeDelete; $("#cType").value = ""; $("#cGo").disabled = !!typeDelete;
     $("#cAlsoWrap").hidden = !also; $("#cAlso").checked = !!(also && also.checked); $("#cAlsoLbl").textContent = also ? also.label : "";
     $("#cType").oninput = () => $("#cGo").disabled = $("#cType").value.trim() !== "DELETE";
@@ -804,8 +852,11 @@ function deleteOne(s) {
 }
 function showMedia(title, file, video) {
   $("#mTitle").textContent = title; $("#mPath").textContent = file;
-  $("#mBody").replaceChildren(video ? h("video", {src: src(file, 1), controls: true, autoplay: true, loop: true, playsinline: true})
-                                   : h("img", {src: src(file, 1), alt: title}));
+  const el = video ? h("video", {src: src(file, 1), controls: true, autoplay: true, loop: true, playsinline: true, class: "skel"})
+                  : h("img", {src: src(file, 1), alt: title, class: "skel"});
+  const done = () => el.classList.remove("skel");
+  ["load", "loadeddata", "error"].forEach(ev => el.addEventListener(ev, done));
+  $("#mBody").replaceChildren(el);
   if (!$("#mediaDlg").open) $("#mediaDlg").showModal();
 }
 $("#mediaDlg").addEventListener("close", () => $("#mBody").replaceChildren());
@@ -815,7 +866,7 @@ $("#timelapseBtn").onclick = e => busy(e.currentTarget, async () => {
   showMedia("Timelapse" + (repo ? " · " + repo : ""), await api("timelapse", {repo}), true);
 });
 $("#wrappedBtn").onclick = e => busy(e.currentTarget, async () => {
-  const y = $("#yearSel").value; showMedia(y + " wrapped", await api("wrapped", {year: y}));
+  const y = $("#yearSel").value; toast("Rendering " + y + " wrapped…"); showMedia(y + " wrapped", await api("wrapped", {year: y}));
 });
 
 // ------------------------------------------------------------------ team
@@ -823,9 +874,12 @@ function renderTeamShell() {
   $("#teamSetup").hidden = S.sharing; $("#teamMain").hidden = !S.sharing;
   $("#tlabel").textContent = S.sharing ? S.shareLabel : "";
 }
+let teamLoaded = false;
 async function loadTeam(refresh, btn) {
   if (!S.sharing) return;
-  await busy(btn, async () => { TEAM = await api("team", {refresh}); drawTeam(); });
+  if (!teamLoaded) { $("#teamEmpty").hidden = true; $("#tgrid").replaceChildren(...skelCards(8)); }
+  await busy(btn, async () => { TEAM = await api("team", {refresh}); teamLoaded = true; drawTeam(); });
+  if (!teamLoaded) $("#tgrid").replaceChildren();
 }
 function drawTeam() {
   const people = [...new Set(TEAM.map(r => r.name))].sort((a, b) => a.localeCompare(b));
@@ -835,11 +889,11 @@ function drawTeam() {
   const p = $("#personSel").value, q = $("#tq").value.toLowerCase();
   TVIEW = TEAM.filter(r => (!p || r.name === p) && (r.subject + " " + r.name).toLowerCase().includes(q));
   $("#tcount").textContent = TEAM.length ? TVIEW.length + (TVIEW.length === 1 ? " picture" : " pictures") : "";
-  $("#teamEmpty").hidden = TEAM.length > 0;
+  $("#teamEmpty").hidden = !teamLoaded || TEAM.length > 0;
   $("#tgrid").replaceChildren(...TVIEW.map((r, i) => h("figure", {class: "shot", onclick: () => openViewer("team", i),
       oncontextmenu: e => menu(e, [{label: "Open", run: () => openViewer("team", i)}, {label: "Copy commit message", run: () => copyText(r.subject)}])},
     r.mine ? h("span", {class: "badge"}, "you") : null,
-    h("img", {src: src(r.file), loading: "lazy", alt: r.subject}),
+    lazyImg({src: src(r.file), loading: "lazy", alt: r.subject}),
     h("figcaption", {},
       h("div", {class: "msg"}, r.subject),
       h("div", {class: "meta"}, h("span", {}, r.name + (r.repo ? " · " + r.repo : "")), h("span", {}, fmtDate(r.date)))))));
@@ -871,8 +925,8 @@ function renderSettings() {
   $("#teamSub").textContent = S.sharing ? "Shared as “" + cfg("share.name") + "”." : "Not set up. Pictures stay on this computer.";
   $("#teamTarget").textContent = S.shareLabel;
   $("#repoList").replaceChildren(...(S.repos || []).map(r => h("div", {class: "repo-row"},
-    h("span", {class: "nm"}, r.repo),
-    h("span", {class: "st"}, r.show == null ? "not asked yet" : r.show ? "→ " + r.folder : "→ other-repos"),
+    h("span", {class: "nm", title: r.repo}, r.repo),
+    h("span", {class: "st", title: r.show ? r.folder : ""}, r.show == null ? "not asked yet" : r.show ? "→ " + r.folder : "→ other-repos"),
     h("input", {type: "checkbox", class: "switch", checked: !!r.show, "aria-label": "Show " + r.repo + " by name",
       onchange: e => busy(e.target, async () => { await api("set_repo_choice", {repo: r.repo, show: e.target.checked}); toast("Saved ✓"); PREV.clear(); rSig = ""; await load(); })}))));
   if (!(S.repos || []).length) $("#repoList").replaceChildren(h("span", {class: "count"}, "No repos yet."));
@@ -886,7 +940,7 @@ function renderSettings() {
 }
 async function renderFolders() {
   const f = await api("folders").catch(() => []);
-  $("#folderList").replaceChildren(...f.map(x => h("div", {class: "repo-row"}, h("span", {class: "nm"}, x),
+  $("#folderList").replaceChildren(...f.map(x => h("div", {class: "repo-row"}, h("span", {class: "nm", title: x}, x),
     h("button", {class: "btn", onclick: e => busy(e.currentTarget, async () => {
       await api("set_folders", {folders: f.filter(y => y !== x)}); toast("Removed ✓"); await renderFolders();
     })}, "Remove"))));
@@ -911,7 +965,7 @@ for (const el of $$("[data-key]")) {
 $("#s-auto").addEventListener("click", async e => {
   if (!e.target.checked) return;
   e.preventDefault();
-  if (await confirmDlg({title: "Share every photo automatically?", text: "Every commit photo goes to the team gallery without a preview. Nobody checks who is in the background or what the commit message says.", go: "Turn on"}))
+  if (await confirmDlg({title: "Share every photo automatically?", text: "Every commit photo goes to the team gallery without a preview. Nobody checks who is in the background or what the commit message says.", go: "Turn on", safe: true}))
     save("share.auto", "true");
 });
 $("#s-hook").onchange = e => busy(e.target, async () => {
@@ -1014,15 +1068,15 @@ function renderReview() {
   if (sig === rSig || !S.sharing) return;
   rSig = sig;
   const cards = q.slice(0, 3).map((s, i) => {
-    const pic = h("div", {class: "pic"}, "…");
+    const pic = h("div", {class: "pic skel"});
     const card = h("div", {class: "rcard" + (i ? " back" + i : "")},
       pic,
       h("div", {class: "stamp hot impact"}, "hot"),
       h("div", {class: "stamp not impact"}, "not"),
       h("div", {class: "info"}, h("div", {class: "msg"}, s.subject), h("div", {class: "meta"}, s.repo + " · " + s.branch + " · " + fmtTs(s.ts))));
     card.dataset.file = s.file;
-    loadPreview(s.file).then(p => { pic.textContent = ""; pic.style.backgroundImage = `url("${src(p)}")`; })
-      .catch(e => { pic.textContent = "preview failed: " + e; });
+    loadPreview(s.file).then(p => { pic.classList.remove("skel"); pic.style.backgroundImage = `url("${src(p)}")`; })
+      .catch(e => { pic.classList.remove("skel"); pic.textContent = "Preview failed: " + e; });
     return card;
   });
   $("#stack").replaceChildren(...cards.reverse());   // top card last = on top
@@ -1105,7 +1159,7 @@ async function decide(hot) {
     if (hot) {
       PENDING.add(file);
       const job = upChain = upChain.then(() => api("share_shot", {file}))
-        .then(() => { const s = S.shots.find(x => x.file === file); if (s) s.shared = true; toast("🔥 Shared with your team"); })
+        .then(() => { const s = S.shots.find(x => x.file === file); if (s) s.shared = true; toast("Shared with your team ✓"); })
         .catch(e => { RHIST = RHIST.filter(x => x.file !== file); toast("Not shared – “" + (shot ? shot.subject : file) + "”: " + e, true); })
         .finally(() => { PENDING.delete(file); rSig = ""; renderReview(); drawShots(); renderPrivacy(); });
       RHIST.push({file, hot, job});
@@ -1231,7 +1285,7 @@ $("#wzDevice").onchange = e => api("set_config", {key: "device", value: e.target
 $("#wzDelay").oninput = e => $("#wzDelayVal").textContent = e.target.value + " s";
 $("#wzDelay").onchange = e => api("set_config", {key: "delay", value: e.target.value}).catch(err => toast(err, true));
 $("#wzTestBtn").onclick = e => busy(e.currentTarget, async () => {
-  $("#wzShot").replaceChildren("📸 Say cheese…");
+  $("#wzShot").replaceChildren("Say cheese…");
   const f = await api("test_shot");
   $("#wzShot").replaceChildren(h("img", {src: src(f, 1), alt: "Test photo"}));
   $("#camNext").disabled = false;
@@ -1253,10 +1307,12 @@ async function wzTeam() {
   $("#wzTeamPick").hidden = false; $("#wzTeamName").hidden = true; $("#wzTeamSave").hidden = true;
   $("#wzTeamSkip").hidden = false; $("#wzRclone").hidden = true;
   $("#wzTeamSkip").textContent = wzOnly ? "Cancel" : "Skip – keep everything on this computer";
+  $("#wzDriveBox").hidden = false;
+  $("#wzDrives").replaceChildren(h("div", {class: "opt skel", style: "height:72px", "aria-label": "Looking for Google Drive…"}));
   const folders = await api("drive_folders").catch(() => []);
   $("#wzDriveBox").hidden = !folders.length;
   $("#wzDrives").replaceChildren(...folders.map(f => h("button", {class: "opt", onclick: e => wzUseFolder(e.currentTarget, f.path, "Google Drive › " + f.name)},
-    h("span", {class: "ic"}, "🟡"),
+    h("span", {class: "ic"}, icon("drive")),
     h("span", {}, h("div", {class: "t"}, f.name), h("div", {class: "d"}, "Shared drive · " + f.account + " · no sign-in needed")),
     h("span", {class: "go"}, "›"))));
   const rc = await api("rclone_status").catch(() => ({}));
@@ -1312,7 +1368,7 @@ $("#wzGoogle").onclick = e => busy(e.currentTarget, async () => {
     ...drives.map(d => h("button", {class: "opt", onclick: ev => busy(ev.currentTarget, async () => {
       box.firstChild.textContent = "Checking that lolcommits can write to “" + d.name + "”…";
       await api("rclone_use", {id: d.id, name: d.name}); await wzConnected();
-    })}, h("span", {class: "ic"}, "🟡"), h("span", {}, h("div", {class: "t"}, d.name)), h("span", {class: "go"}, "›")))));
+    })}, h("span", {class: "ic"}, icon("drive")), h("span", {}, h("div", {class: "t"}, d.name)), h("span", {class: "go"}, "›")))));
 });
 // Google sign-in needs an OAuth client of the team's company (Desktop app, Drive API).
 // Builds from GitHub come with entrecode's; other teams enter theirs here.
@@ -1358,6 +1414,7 @@ function route(to) {
 $$("nav a").forEach(a => a.onclick = () => route(a.dataset.v));
 
 (async () => {
+  $("#grid").replaceChildren(...skelCards(8));
   try { await load(); } catch (e) { toast(e, true); return; }
   route("shots");
   if (!S.setupDone) openWizard("welcome");

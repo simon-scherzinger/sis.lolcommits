@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Fits small windows:** the top bar stays on one line down to the smallest window size, long repo and branch names are shortened with "…" instead of breaking the date over three lines, and in Review the swipe buttons stay on screen even with a banner showing. The photo viewer keeps its info bar visible for long commit messages.
+- **Loading placeholders:** pictures, the team gallery and the share preview shimmer while they load, instead of empty grey boxes or a flash of "nothing here yet".
+- **Share only what you have seen:** the Share button waits until the preview is on screen. Before, a quick click could share before the preview had loaded.
+- **Icons instead of emojis:** buttons, the setup assistant and Review use simple line icons.
+- **Only deleting is red:** confirmations like "Show name" or "Share every photo automatically" use the normal button.
+
 ## 0.5.3
 
 - **Camera free again after a photo:** lolcommits now lets go of the camera after every photo. Before, Photo Booth, FaceTime or WhatsApp got no picture until you quit lolcommits.
