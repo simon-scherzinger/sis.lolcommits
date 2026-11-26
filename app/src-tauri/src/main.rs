@@ -468,8 +468,45 @@ async fn update_install(app: AppHandle) -> R<()> {
 
 // ---------------------------------------------------------------- window, tray
 
+// While the window is open lolcommits is a normal app (Dock icon, ⌘-Tab);
+// with the window closed it lives in the menu bar only.
+fn dock(app: &AppHandle, visible: bool) {
+    #[cfg(target_os = "macos")]
+    let _ = app.set_activation_policy(if visible { tauri::ActivationPolicy::Regular } else { tauri::ActivationPolicy::Accessory });
+    let _ = (app, visible);
+}
+
+fn hide_main(app: &AppHandle) {
+    if let Some(w) = app.get_webview_window("main") {
+        let _ = w.hide();
+    }
+    dock(app, false);
+}
+
+// App menu while the window is open. ⌘Q only closes the window – lolcommits keeps
+// taking photos from the menu bar; "Quit lolcommits" lives in the menu bar menu.
+#[cfg(target_os = "macos")]
+fn app_menu(app: &AppHandle) -> tauri::Result<()> {
+    use tauri::menu::{Menu, MenuItem, PredefinedMenuItem as P, Submenu};
+    let close = MenuItem::with_id(app, "close-app", "Close lolcommits", true, Some("CmdOrCtrl+Q"))?;
+    let main = Submenu::with_items(app, "lolcommits", true, &[
+        &P::about(app, None, None)?, &P::separator(app)?,
+        &P::hide(app, None)?, &P::hide_others(app, None)?, &P::show_all(app, None)?, &P::separator(app)?,
+        &close,
+    ])?;
+    let edit = Submenu::with_items(app, "Edit", true, &[
+        &P::undo(app, None)?, &P::redo(app, None)?, &P::separator(app)?,
+        &P::cut(app, None)?, &P::copy(app, None)?, &P::paste(app, None)?, &P::select_all(app, None)?,
+    ])?;
+    let window = Submenu::with_items(app, "Window", true, &[&P::minimize(app, None)?, &P::close_window(app, None)?])?;
+    app.set_menu(Menu::with_items(app, &[&main, &edit, &window])?)?;
+    app.on_menu_event(|app, e| if e.id().as_ref() == "close-app" { hide_main(app) });
+    Ok(())
+}
+
 fn show_main(app: &AppHandle, route: Option<&str>) {
     if let Some(w) = app.get_webview_window("main") {
+        dock(app, true);
         let _ = w.show();
         let _ = w.unminimize();
         let _ = w.set_focus();
@@ -569,6 +606,8 @@ fn main() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             let handle = app.handle().clone();
+            #[cfg(target_os = "macos")]
+            app_menu(&handle)?;
             share::clear_previews();
             allow_assets(&handle);
             let menu = tray::build_menu(&handle)?;
@@ -593,7 +632,7 @@ fn main() {
             // closing the window keeps lolcommits running in the menu bar
             if let tauri::WindowEvent::CloseRequested { api, .. } = e {
                 api.prevent_close();
-                let _ = w.hide();
+                hide_main(w.app_handle());
             }
         })
         .build(tauri::generate_context!())

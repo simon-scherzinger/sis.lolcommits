@@ -58,6 +58,10 @@ fn draw(lens: i32, flash: i32, slash: bool, dot: bool) -> Image<'static> {
     if slash {
         thick_line(&mut img, (6.0, 41.0), (40.0, 5.0), 4, CLEAR);
         thick_line(&mut img, (6.0, 41.0), (40.0, 5.0), 1, INK);
+        // paused: dimmed, like a disabled menu bar item
+        for p in img.pixels_mut() {
+            p.0[3] = (p.0[3] as u16 * 2 / 5) as u8;
+        }
     }
     if dot {
         draw_filled_circle_mut(&mut img, (38, 9), 6, CLEAR);
