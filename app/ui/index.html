@@ -23,6 +23,7 @@ a{color:inherit}
 .i{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-.2em}
 .impact{font-family:Impact,"Anton","Arial Narrow Bold",sans-serif;font-weight:400;letter-spacing:.3px}
 [id]{scroll-margin-top:calc(var(--top-h,56px) + 28px)}
+.shot{scroll-margin-top:calc(var(--top-h,56px) + 72px)}
 .top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:10px 18px}
 .brand{font-size:26px;line-height:1}
@@ -55,6 +56,10 @@ section[hidden],[hidden]{display:none!important}
 .banner.bad{background:color-mix(in srgb,var(--bad) 14%,var(--card))}
 .banner .spacer{flex:1}
 .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+/* filter bars stick under the header; the line below shows up once they are stuck */
+#v-shots > .bar,#teamMain > .bar{position:sticky;top:var(--top-h,56px);z-index:4;margin:-10px -18px 6px;padding:10px 18px;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid transparent}
+.bar.stuck{border-bottom-color:var(--line)}
 .bar input[type=search],select,.field input:not([type=checkbox]):not([type=range]){background:var(--card);border:1px solid var(--line);border-radius:9px;padding:0 11px;height:34px;font-size:13px}
 select{-webkit-appearance:none;appearance:none;padding-right:28px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
 .bar .btn{height:34px;padding-top:0;padding-bottom:0}
@@ -89,6 +94,14 @@ select{-webkit-appearance:none;appearance:none;padding-right:28px;background-ima
 .switch:checked{background:var(--ok);border-color:transparent}
 .switch:checked::after{transform:translateX(16px)}
 .switch:disabled{opacity:.4}
+/* range slider in the app's style: yellow fill up to the knob (--p, set from JS), white knob like the switches */
+input[type=range]{-webkit-appearance:none;appearance:none;width:210px;height:24px;margin:0;background:transparent;--p:0%}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:linear-gradient(to right,var(--acc) var(--p),var(--card2) var(--p));box-shadow:inset 0 0 0 1px var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;margin-top:-7px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 3px #0004,0 0 0 1px #0000000d;transition:transform .1s}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.1)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 1px 3px #0004,0 0 0 3px color-mix(in srgb,var(--acc) 60%,transparent)}
+.field label .count{font-variant-numeric:tabular-nums}
 code{font:12px ui-monospace,Menlo,monospace;word-break:break-all;-webkit-user-select:text;user-select:text}
 ul.facts{margin:0;padding-left:18px}ul.facts li{margin:4px 0}
 dialog{border:0;padding:0;background:transparent;color:var(--fg);max-width:min(1200px,96vw);max-height:96vh}
@@ -105,7 +118,7 @@ dialog::backdrop{background:#000000d0}
 .modal h3{margin:0 0 6px}.modal p{color:var(--mut);margin:0 0 14px}
 .modal img{width:100%;max-height:min(42vh,340px);object-fit:contain;border-radius:10px;display:block;margin-bottom:12px;min-height:120px;background:var(--card2)}
 .checks label{display:flex;gap:10px;align-items:center;padding:5px 0;font-weight:500}
-.modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.modal .actions{display:flex;gap:10px;justify-content:flex-end;margin:16px 0 -20px;padding:12px 0 20px;flex-wrap:wrap;position:sticky;bottom:-20px;background:var(--card)}
 .doc:focus{outline:none}
 .doc{width:min(860px,94vw);max-height:86vh;overflow:auto;-webkit-user-select:text;user-select:text}
 .doc h1{font-size:22px;margin:0 0 10px}.doc h2{font-size:17px;margin:22px 0 8px}
@@ -165,13 +178,13 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 
 /* ---------------------------------------------------------------- wizard */
 #wizard{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;overflow:auto}
-.wz-top{display:flex;align-items:center;gap:14px;padding:16px 24px}
+.wz-top{display:flex;align-items:center;gap:14px;padding:16px 24px;position:sticky;top:0;z-index:2;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px)}
 .dots{display:flex;gap:6px}.dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}.dots i.on{background:var(--fg)}
 .wz{flex:1;display:flex;align-items:center;justify-content:center;padding:10px 24px 40px}
 .step{width:min(760px,100%)}
 .step h1{font-size:46px;margin:0 0 6px;line-height:1.05}
 .step .lead{font-size:16px;color:var(--mut);margin:0 0 22px;max-width:620px}
-.step .nav{display:flex;gap:10px;align-items:center;margin-top:26px}
+.step .nav{display:flex;gap:10px;align-items:center;margin-top:14px;padding:12px 0;position:sticky;bottom:0;z-index:2;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px)}
 .hero{width:120px;height:120px;border-radius:28px;background:var(--acc);display:grid;place-items:center;margin-bottom:18px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .col{background:var(--card);border-radius:var(--r);padding:16px 18px;border:1px solid var(--line)}
@@ -579,6 +592,9 @@ async function busy(btn, fn) {
   catch (e) { toast(e, true); }
   finally { group.forEach(b => b.disabled = false); if (btn) btn.classList.remove("busy"); }
 }
+// Range sliders: the yellow part of the track follows the knob.
+const rangeFill = el => el.style.setProperty("--p", (el.value - el.min) / (el.max - el.min) * 100 + "%");
+document.addEventListener("input", e => { if (e.target.type === "range") rangeFill(e.target); });
 // Line icon from the sprite at the top of <body>.
 function icon(name) {
   const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"), use = document.createElementNS(NS, "use");
@@ -623,6 +639,11 @@ function measureChrome() {
   root.setProperty("--ban-h", $$("main > .banner").filter(b => !b.hidden).reduce((a, b) => a + b.offsetHeight + 14, 0) + "px");
 }
 new ResizeObserver(measureChrome).observe($(".top"));
+function markStuck() {
+  const top = $(".top").offsetHeight;
+  for (const b of $$("#v-shots > .bar, #teamMain > .bar")) b.classList.toggle("stuck", scrollY > 0 && b.offsetParent != null && b.getBoundingClientRect().top <= top + 1);
+}
+addEventListener("scroll", markStuck, {passive: true});
 addEventListener("resize", measureChrome);
 
 // ------------------------------------------------------------------ my shots
@@ -919,7 +940,7 @@ function renderSettings() {
     : "Your git (" + S.gitVersion + ") is too old for global hooks – update to git 2.54 or newer.";
   $("#pauseBtns").hidden = !!S.pausedUntil; $("#resumeRow").hidden = !S.pausedUntil; $("#pausedLbl").textContent = pausedText();
   $("#s-dir").textContent = S.dir;
-  $("#s-delay").value = cfg("delay", "1.5"); $("#delayVal").textContent = $("#s-delay").value + " s";
+  $("#s-delay").value = cfg("delay", "1.5"); rangeFill($("#s-delay")); $("#delayVal").textContent = $("#s-delay").value + " s";
   $("#s-login").checked = S.autostart;
   $("#teamOff").hidden = S.sharing; $("#teamOn").hidden = !S.sharing;
   $("#teamSub").textContent = S.sharing ? "Shared as “" + cfg("share.name") + "”." : "Not set up. Pictures stay on this computer.";
@@ -1274,7 +1295,7 @@ $$("[data-back]").forEach(b => b.onclick = () => { if (wzOnly) return closeWizar
 
 function wzCamera() {
   $("#camAsk").hidden = S.cameraOk; $("#camOk").hidden = !S.cameraOk;
-  $("#wzDelay").value = cfg("delay", "1.5"); $("#wzDelayVal").textContent = $("#wzDelay").value + " s";
+  $("#wzDelay").value = cfg("delay", "1.5"); rangeFill($("#wzDelay")); $("#wzDelayVal").textContent = $("#wzDelay").value + " s";
   if (S.cameraOk) loadDevices($("#wzDevice"));
 }
 $("#camAllowBtn").onclick = e => busy(e.currentTarget, async () => {

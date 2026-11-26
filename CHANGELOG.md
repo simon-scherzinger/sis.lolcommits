@@ -6,6 +6,8 @@
 - **Loading placeholders:** pictures, the team gallery and the share preview shimmer while they load, instead of empty grey boxes or a flash of "nothing here yet".
 - **Share only what you have seen:** the Share button waits until the preview is on screen. Before, a quick click could share before the preview had loaded.
 - **Icons instead of emojis:** buttons, the setup assistant and Review use simple line icons.
+- **Filters stay in reach:** in My shots and Team the search and filter bar sticks under the top bar while you scroll. In the setup assistant and in dialogs, the Back/Next and Cancel/Close buttons stay visible on small windows.
+- **Warm-up slider** in the app's style instead of the blue system slider.
 - **Only deleting is red:** confirmations like "Show name" or "Share every photo automatically" use the normal button.
 
 ## 0.5.3
