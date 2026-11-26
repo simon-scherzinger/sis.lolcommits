@@ -207,12 +207,20 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .opt .go{margin-left:auto;color:var(--mut)}
 .ok{color:var(--ok);font-weight:700}
 .sub-h{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px}
+@media (max-width:899px){
+  /* toolbars: icon-only buttons (label in the tooltip), so the bar stays on one row */
+  .bar .btn .lbl{display:none}
+  .bar .btn:has(.lbl){width:34px;padding:0;justify-content:center}
+  .bar select{max-width:160px}
+  .bar input[type=search]{min-width:120px}
+  #tlabel{display:none}
+}
 @media (max-width:860px){.top{gap:10px;padding:10px 14px}nav a{padding:5px 9px}.brand small{display:none}}
 @media (max-width:760px){.cols,.cam{grid-template-columns:1fr}.cards{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<svg hidden aria-hidden="true"><symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol><symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 7.5h4M3 12h18M3 16.5h4M17 7.5h4M17 16.5h4"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></symbol><symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M6 16h.01M10 16h.01"/></symbol><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol></svg>
+<svg hidden aria-hidden="true"><symbol id="i-select" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol><symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 7.5h4M3 12h18M3 16.5h4M17 7.5h4M17 16.5h4"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol><symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></symbol><symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></symbol><symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol><symbol id="i-drive" viewBox="0 0 24 24"><path d="M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><path d="M6 16h.01M10 16h.01"/></symbol><symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol><symbol id="i-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol><symbol id="i-left" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol><symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol></svg>
 <header class="top">
   <div class="brand impact">lolcommits<small id="ver"></small></div>
   <nav>
@@ -236,11 +244,11 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       <select id="repoSel" aria-label="Repository"></select>
       <input id="q" type="search" placeholder="Search commit messages…" aria-label="Search">
       <span class="count" id="count"></span>
-      <button class="btn" id="selectBtn">Select</button>
+      <button class="btn" id="selectBtn" title="Select several pictures" aria-label="Select"><svg class="i" aria-hidden="true"><use href="#i-select"/></svg><span class="lbl">Select</span></button>
       <div class="spacer"></div>
-      <button class="btn" id="timelapseBtn"><svg class="i" aria-hidden="true"><use href="#i-film"/></svg>Timelapse</button>
+      <button class="btn" id="timelapseBtn" aria-label="Timelapse"><svg class="i" aria-hidden="true"><use href="#i-film"/></svg><span class="lbl">Timelapse</span></button>
       <select id="yearSel" aria-label="Year for Wrapped"></select>
-      <button class="btn" id="wrappedBtn"><svg class="i" aria-hidden="true"><use href="#i-calendar"/></svg><span id="wrappedLbl">Wrapped</span></button>
+      <button class="btn" id="wrappedBtn"><svg class="i" aria-hidden="true"><use href="#i-calendar"/></svg><span class="lbl" id="wrappedLbl">Wrapped</span></button>
     </div>
     <div class="grid" id="grid"></div>
     <div class="selbar" id="selBar" hidden>
@@ -305,7 +313,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
         <span class="count" id="tcount"></span>
         <div class="spacer"></div>
         <span class="count" id="tlabel"></span>
-        <button class="btn" id="syncBtn"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg>Refresh</button>
+        <button class="btn" id="syncBtn" aria-label="Refresh"><svg class="i" aria-hidden="true"><use href="#i-refresh"/></svg><span class="lbl">Refresh</span></button>
       </div>
       <div class="grid" id="tgrid"></div>
       <div class="empty" id="teamEmpty" hidden><h2 class="impact">nothing here yet</h2><div>Swipe right in “Review” to share a shot.</div></div>
@@ -662,9 +670,10 @@ function renderShots() {
   $("#yearSel").value = years.includes(cy) ? cy : (years[0] || "");
   $("#yearSel").hidden = years.length < 2;
   $("#wrappedLbl").textContent = "Wrapped" + (years.length === 1 ? " " + years[0] : "");
+  $("#wrappedBtn").title = $("#wrappedBtn").ariaLabel = "Wrapped " + ($("#yearSel").value || "") + " – the year on one contact sheet";
   $("#shotsBar").style.visibility = "";
   ["#timelapseBtn", "#wrappedBtn", "#selectBtn"].forEach(s => $(s).disabled = !S.shots.length);
-  $("#timelapseBtn").title = S.ffmpeg ? "" : "Needs ffmpeg (brew install ffmpeg)";
+  $("#timelapseBtn").title = S.ffmpeg ? "Timelapse video of your shots" : "Timelapse – needs ffmpeg (brew install ffmpeg)";
   drawShots();
 }
 function drawShots() {
@@ -683,6 +692,7 @@ function drawShots() {
       h("div", {class: "meta"}, h("span", {title: s.repo + " · " + s.branch}, s.repo + " · " + s.branch), h("span", {}, fmtTs(s.ts)))))));
 }
 $("#repoSel").onchange = $("#q").oninput = drawShots;
+$("#yearSel").onchange = () => $("#wrappedBtn").title = $("#wrappedBtn").ariaLabel = "Wrapped " + $("#yearSel").value + " – the year on one contact sheet";
 
 // ------------------------------------------------------------------ select several
 let SEL = null, selLast = -1;     // Set of files while selecting
@@ -894,6 +904,7 @@ $("#wrappedBtn").onclick = e => busy(e.currentTarget, async () => {
 function renderTeamShell() {
   $("#teamSetup").hidden = S.sharing; $("#teamMain").hidden = !S.sharing;
   $("#tlabel").textContent = S.sharing ? S.shareLabel : "";
+  $("#syncBtn").title = S.sharing ? "Refresh – " + S.shareLabel : "Refresh";
 }
 let teamLoaded = false;
 async function loadTeam(refresh, btn) {
