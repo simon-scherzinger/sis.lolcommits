@@ -21,6 +21,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 button,input,select{font:inherit;color:inherit}
 a{color:inherit}
 .impact{font-family:Impact,"Anton","Arial Narrow Bold",sans-serif;font-weight:400;letter-spacing:.3px}
+[id]{scroll-margin-top:84px}
 .top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:10px 18px;flex-wrap:wrap}
 .brand{font-size:26px;line-height:1}
@@ -329,7 +330,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
         <div class="field"><label for="s-ret">Delete local pictures after</label><input id="s-ret" data-key="retention" type="number" min="0" placeholder="never (days)"></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="updates">
         <h3>Updates</h3><p class="sub" id="updSub"></p>
         <div class="field"><label>Status</label>
           <div class="row"><span id="updLbl"></span><button class="btn" id="updCheck">Check now</button><button class="btn primary" id="updInstall" hidden>Install and restart</button></div>
@@ -1344,11 +1345,14 @@ $("#wzFinish").onclick = e => busy(e.currentTarget, async () => {
 });
 
 // ------------------------------------------------------------------ routing, events
-function route(v) {
+// "settings#updates": the tab, scrolled to that card
+function route(to) {
+  const [v, anchor] = String(to).split("#");
   view = ["shots", "review", "team", "settings", "privacy"].includes(v) ? v : "shots";
   $$("main > section").forEach(s => s.hidden = s.id !== "v-" + view);
   $$("nav a").forEach(a => a.classList.toggle("on", a.dataset.v === view));
-  window.scrollTo(0, 0);
+  const el = anchor && document.getElementById(anchor);
+  if (el) requestAnimationFrame(() => el.scrollIntoView({block: "start"})); else window.scrollTo(0, 0);
   if (view === "team") loadTeam(true, $("#syncBtn"));
 }
 $$("nav a").forEach(a => a.onclick = () => route(a.dataset.v));

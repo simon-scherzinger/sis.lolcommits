@@ -581,12 +581,12 @@ fn on_menu(app: &AppHandle, id: &str) {
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = update::install(&a).await {
                     store::log(&format!("update failed: {e}"));
-                    show_main(&a, Some("settings"));
+                    show_main(&a, Some("settings#updates"));
                 }
             });
         }
         "check-update" => {
-            show_main(app, Some("settings"));
+            show_main(app, Some("settings#updates"));
             let a = app.clone();
             tauri::async_runtime::spawn(async move {
                 let _ = update::check(&a).await;
