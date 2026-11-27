@@ -5,6 +5,7 @@ mod capture;
 mod config;
 mod drive;
 mod queue;
+mod remind;
 mod render;
 mod share;
 mod store;
@@ -26,8 +27,8 @@ type R<T> = Result<T, String>;
 
 /// Settings the UI may change directly. Share targets only change through the
 /// setup commands below, which test the connection first.
-const KEYS: [&str; 9] = [
-    "device", "delay", "retention", "share.name", "share.retention", "share.auto", "update.auto",
+const KEYS: [&str; 10] = [
+    "device", "delay", "retention", "share.name", "share.retention", "share.auto", "update.auto", "remind",
     "share.googleClientId", "share.googleClientSecret",
 ];
 
@@ -669,6 +670,8 @@ fn main() {
             queue::start(handle.clone());
             watch(handle.clone());
             update::start(handle.clone());
+            let h = handle.clone();
+            remind::start(handle.clone(), move || show_main(&h, Some("review")));
             if share::configured() {
                 std::thread::spawn(|| match share::move_old_sidecars() {
                     Ok(0) => {}

@@ -1,7 +1,7 @@
 //! Calendar days and wall-clock times. lolcommits runs on the person's own
 //! computer, so a day is a day on that computer's clock. All day and clock
 //! logic goes through here instead of calling chrono::Local everywhere.
-use chrono::{DateTime, Duration, Local, NaiveDate};
+use chrono::{DateTime, Duration, Local, NaiveDate, Timelike};
 
 pub fn today() -> NaiveDate {
     Local::now().date_naive()
@@ -10,6 +10,11 @@ pub fn today() -> NaiveDate {
 /// The day `days` days before today.
 pub fn days_ago(days: i64) -> NaiveDate {
     today() - Duration::days(days)
+}
+
+/// Current hour on the clock, 0..=23.
+pub fn hour() -> u32 {
+    Local::now().hour()
 }
 
 /// Unix time of tomorrow at `hour`:00.

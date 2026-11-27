@@ -75,6 +75,11 @@ pub fn set_private(file: &str, private: bool) -> std::io::Result<()> {
     write_lines(&private_path(), &rows)
 }
 
+/// Photos waiting in Review: neither shared nor kept private.
+pub fn to_review(shots: &[Shot]) -> usize {
+    shots.iter().filter(|s| !s.shared && !s.private).count()
+}
+
 pub fn shots() -> Vec<Shot> {
     let shared: Vec<String> = shared_rows().into_iter().map(|r| r.0).collect();
     let private = private_files();

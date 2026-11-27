@@ -136,6 +136,7 @@ Everything is plain git config, shared by the app and the command line:
 | `lolcommits.share.googleClientId` / `…Secret` | – | your team's Google OAuth client for "Sign in with Google" |
 | `lolcommits.share.auto` | `false` | upload every photo without review (repos not asked yet stay hidden) |
 | `lolcommits.update.auto` | `true` | look for app updates on GitHub every few hours |
+| `lolcommits.remind` | `true` | once a day, from 10:00, a notification when photos wait in Review (app, with a team gallery) |
 
 Per-repo choices live in `~/.lolcommits/repo-names.tsv` (`repo`, tab, `show` or `hide`).
 

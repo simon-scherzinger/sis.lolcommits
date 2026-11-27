@@ -353,6 +353,8 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
             <div id="repoList" style="grid-column:1/-1"></div></div>
           <div class="field"><label for="s-auto">Share every photo automatically</label><input type="checkbox" class="switch" id="s-auto" data-key="share.auto">
             <div class="hint">Skips the preview – nobody checks the background or the commit message.</div></div>
+          <div class="field"><label for="s-remind">Remind me to review</label><input type="checkbox" class="switch" id="s-remind">
+            <div class="hint">Once a day, from 10:00, a notification when new photos are waiting in Review. Click it to open Review.</div></div>
           <div class="field"><label for="s-sret">Remove my shared pictures after</label><input id="s-sret" data-key="share.retention" type="number" min="0" placeholder="never (days)">
             <div class="hint">Days. Empty keeps them until you take them back. Your team may have agreed on a period.</div></div>
         </div>
@@ -968,6 +970,7 @@ function renderSettings() {
   $("#s-dir").textContent = S.dir;
   $("#s-delay").value = cfg("delay", "1.5"); rangeFill($("#s-delay")); $("#delayVal").textContent = $("#s-delay").value + " s";
   $("#s-login").checked = S.autostart;
+  $("#s-remind").checked = cfg("remind") !== "false";
   $("#teamOff").hidden = S.sharing; $("#teamOn").hidden = !S.sharing;
   $("#teamSub").textContent = S.sharing ? "Shared as “" + cfg("share.name") + "”." : "Not set up. Pictures stay on this computer.";
   $("#teamTarget").textContent = S.shareLabel;
@@ -1058,6 +1061,7 @@ $("#updCheck").onclick = e => busy(e.currentTarget, async () => {
 });
 $("#updInstall").onclick = e => busy(e.currentTarget, async () => { await api("update_install"); });
 $("#s-upauto").onchange = e => save("update.auto", e.target.checked ? "" : "false");
+$("#s-remind").onchange = e => save("remind", e.target.checked ? "" : "false");
 
 // ------------------------------------------------------------------ privacy
 function renderPrivacy() {
