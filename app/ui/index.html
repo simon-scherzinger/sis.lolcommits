@@ -351,7 +351,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       <div class="card">
         <h3>Repos</h3><p class="sub">Every repo with photos on this computer. A repo counts once, in all its clones and worktrees.</p>
         <div id="repoList"></div>
-        <div class="hint repo-hint"><b>Photos</b> off: no photos in this repo, the ones already taken stay.<span class="if-team"> <b>Share</b> off: its photos stay on this computer and never show in Review. <b>Name</b> shown: pictures go to a folder named after the repo, label visible. Hidden: folder “other-repos”, repo and hash blurred – keep client work hidden. Applies to pictures shared from now on.</span></div>
+        <div class="hint repo-hint"><b>Photos</b> off: no photos in this repo, the ones already taken stay.<span class="if-team"> <b>Share</b> off: its photos stay on this computer and never show in Review. <b>Name</b> shown: pictures go to a folder named after the repo, label visible. Hidden: folder “other-repos”, repo and hash blurred – keep client work hidden. The name is a team setting: the first answer counts for everyone, and a change here changes it for the whole team. Applies to pictures shared from now on.</span></div>
       </div>
 
       <div class="card">
@@ -366,7 +366,9 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
           <div class="field"><label for="s-remind">Remind me to review</label><input type="checkbox" class="switch" id="s-remind">
             <div class="hint">Once a day, from 10:00, a notification when new photos are waiting in Review. Click it to open Review.</div></div>
           <div class="field"><label for="s-sret">Remove my shared pictures after</label><input id="s-sret" data-key="share.retention" type="number" min="0" placeholder="never (days)">
-            <div class="hint">Days. Empty keeps them until you take them back. Your team may have agreed on a period.</div></div>
+            <div class="hint" id="sretHint">Days. Empty keeps them until you take them back.</div></div>
+          <div class="field"><label for="s-tret">Team: shared pictures stay at most</label><input id="s-tret" type="number" min="0" placeholder="no limit (days)">
+            <div class="hint">A team setting, for everyone in this team gallery. Each person can remove theirs earlier, not keep them longer.</div></div>
         </div>
       </div>
 
@@ -834,12 +836,27 @@ function refreshViewer(file) {
 
 // ------------------------------------------------------------------ actions
 const repoChoice = repo => (S.repos.find(r => r.repo === repo) || {}).show;   // true / false / null
+// days shared pictures are kept: mine, at most the team's maximum (0 = keep)
+const keepDays = () => { const m = +cfg("share.retention", "0") || 0, t = S.teamRetention || 0; return t && m ? Math.min(m, t) : t || m; };
 const mayShare = repo => (S.repos.find(r => r.repo === repo) || {}).share !== false;  // Settings › Repos › Share
-async function askRepo(repo) {
-  const r = await confirmDlg({title: "Show “" + repo + "” by name?", go: "Show name", safe: true,
-    text: "Your team would see the repo name, and the picture goes to the folder “" + repo + "”. Choose “Cancel” to keep it hidden: folder “other-repos”, name blurred. Asked once per repo, changeable in Settings."});
-  await api("set_repo_choice", {repo, show: !!r});
+// The repo name question: with a team gallery the first answer is the team's.
+// Fetch the team settings first, someone may have answered already.
+async function teamRefresh() {
+  if (!S.sharing) return;
+  await api("refresh_team_settings").catch(() => {});
   S.repos = await api("repo_choices");
+}
+async function answered(repo, show) {
+  const now = await api("set_repo_choice", {repo, show, first: true});
+  if (now !== show) toast("Your team already chose to " + (now ? "show" : "hide") + " “" + repo + "” – kept");
+  S.repos = await api("repo_choices");
+}
+async function askRepo(repo) {
+  await teamRefresh();
+  if (repoChoice(repo) != null) return;
+  const r = await confirmDlg({title: "Show “" + repo + "” by name?", go: "Show name", safe: true,
+    text: "Your team would see the repo name, and the picture goes to the folder “" + repo + "”. Choose “Cancel” to keep it hidden: folder “other-repos”, name blurred. Asked once per repo and then the same for the whole team, changeable in Settings."});
+  await answered(repo, !!r);
 }
 async function shareFlow(s) {
   if (repoChoice(s.repo) == null) await askRepo(s.repo);
@@ -982,6 +999,8 @@ function renderSettings() {
   $("#s-delay").value = cfg("delay", "1.5"); rangeFill($("#s-delay")); $("#delayVal").textContent = $("#s-delay").value + " s";
   $("#s-login").checked = S.autostart;
   $("#s-remind").checked = cfg("remind") !== "false";
+  if (document.activeElement !== $("#s-tret")) $("#s-tret").value = S.teamRetention || "";
+  $("#sretHint").textContent = "Days. Empty keeps them until you take them back" + (S.teamRetention ? " – at most " + S.teamRetention + " days, your team's limit." : ".");
   $("#teamOff").hidden = S.sharing; $("#teamOn").hidden = !S.sharing;
   $("#teamSub").textContent = S.sharing ? "Shared as “" + cfg("share.name") + "”." : "Not set up. Pictures stay on this computer.";
   $("#teamTarget").textContent = S.shareLabel;
@@ -1002,7 +1021,8 @@ function renderRepos() {
   const saved = async (e, call) => busy(e.target, async () => { await call(); toast("Saved ✓"); PREV.clear(); rSig = ""; await load(); });
   const option = (r, opt, label) => h("input", {type: "checkbox", class: "switch", checked: r[opt], "aria-label": label + " " + r.repo,
     onchange: e => saved(e, () => api("set_repo_option", {repo: r.repo, option: opt, on: e.target.checked}))});
-  const where = r => !r.photos ? "no photos" : !r.share ? "stays on this computer" : r.show == null ? "name not asked yet" : r.show ? "→ " + r.folder : "→ other-repos";
+  const where = r => !r.photos ? "no photos" : !r.share ? "stays on this computer" : r.show == null ? "name not asked yet"
+    : (r.show ? "→ " + r.folder : "→ other-repos") + (r.team ? " · set by the team" : "");
   const grid = h("div", {class: "repo-grid", style: "--cols:" + (team ? 3 : 1)},
     h("span", {class: "th"}, "Repo"), h("span", {class: "th"}, "Photos"), team && h("span", {class: "th"}, "Share"), team && h("span", {class: "th"}, "Name"),
     repos.map(r => [
@@ -1088,6 +1108,10 @@ $("#updCheck").onclick = e => busy(e.currentTarget, async () => {
 $("#updInstall").onclick = e => busy(e.currentTarget, async () => { await api("update_install"); });
 $("#s-upauto").onchange = e => save("update.auto", e.target.checked ? "" : "false");
 $("#s-remind").onchange = e => save("remind", e.target.checked ? "" : "false");
+$("#s-tret").onchange = e => busy(e.target, async () => {
+  const d = Math.max(0, Math.floor(+e.target.value || 0));
+  await api("set_team_retention", {days: d || null}); toast(d ? "Team limit: " + d + " days ✓" : "No team limit ✓"); await load();
+});
 
 // ------------------------------------------------------------------ privacy
 function renderPrivacy() {
@@ -1095,8 +1119,8 @@ function renderPrivacy() {
   $("#p-target").textContent = S.sharing ? "Shared to " + S.shareLabel + " as “" + cfg("share.name") + "”." : "Sharing is off.";
   const shown = S.repos.filter(r => r.show).map(r => r.repo);
   $("#p-repo").textContent = "with repo name and commit hash blurred – except for repos you chose to show by name" + (shown.length ? " (" + shown.join(", ") + ")" : " (none yet)");
-  const days = +cfg("share.retention", "0");
-  $("#p-keep").textContent = days > 0 ? "It is removed after " + days + " days." : "It stays until you take it back (no expiry set).";
+  const days = keepDays();
+  $("#p-keep").textContent = days > 0 ? "It is removed after " + days + " days" + (days === S.teamRetention ? " (your team's setting)." : ".") : "It stays until you take it back (no expiry set).";
   const n = S.shots.filter(s => s.shared).length;
   $("#p-count").textContent = (n === 1 ? "1 picture" : n + " pictures") + " shared from this computer.";
   $("#unshareAllBtn").disabled = !S.sharing;
@@ -1214,8 +1238,7 @@ function updateRepoAsk() {
 async function answerRepo(show, btn) {
   const s = topShot(); if (!s) return;
   await busy(btn, async () => {
-    await api("set_repo_choice", {repo: s.repo, show});
-    S.repos = await api("repo_choices");
+    await answered(s.repo, show);
     // previews of this repo change (blurred or not): drop them and redraw
     S.shots.filter(x => x.repo === s.repo).forEach(x => PREV.delete(x.file));
     rSig = ""; renderReview(); renderSettings(); renderPrivacy();
@@ -1489,7 +1512,9 @@ function route(to) {
   const el = anchor && document.getElementById(anchor);
   if (el) requestAnimationFrame(() => el.scrollIntoView({block: "start"})); else window.scrollTo(0, 0);
   if (view === "team") loadTeam("auto", $("#syncBtn"));
+  if (view === "review" && !teamFetched && S.sharing) { teamFetched = true; teamRefresh().then(() => { rSig = ""; renderReview(); }); }
 }
+let teamFetched = false;
 $$("nav a").forEach(a => a.onclick = () => route(a.dataset.v));
 
 (async () => {

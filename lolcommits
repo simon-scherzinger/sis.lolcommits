@@ -134,7 +134,7 @@ cmd_status() {
   [ -f "$INDEX" ] && info "shots:   $(wc -l <"$INDEX" | tr -d ' ')"
   if [ "$(share_mode)" = off ]; then info "share:   off"
   else
-    info "share:   $(cfg share.target) as \"$(cfg share.name)\" (auto: $(cfg share.auto false), repos shown by name: $( [ -f "$REPO_NAMES" ] && grep -c '	show$' "$REPO_NAMES" || echo 0), keep: $( [ "$(cfg share.retention 0)" -gt 0 ] 2>/dev/null && echo "$(cfg share.retention 0) days" || echo forever))"
+    info "share:   $(cfg share.target) as \"$(cfg share.name)\" (auto: $(cfg share.auto false), repos shown by name: $( [ -f "$REPO_NAMES" ] && grep -c '	show$' "$REPO_NAMES" || echo 0), keep: $( [ "$(retention_days)" -gt 0 ] && echo "$(retention_days) days" || echo forever))"
     [ -f "$SHARED" ] && info "shared:  $(wc -l <"$SHARED" | tr -d ' ') from this machine"
   fi
 }
@@ -297,7 +297,8 @@ cmd_capture() {
       # auto-share only when explicitly switched on (git config lolcommits.share.auto true)
       if [ "$(cfg share.auto false)" = true ] && [ "$(share_mode)" != off ] && [ -n "$(cfg share.name)" ] && ! listed neverShare "$repo"; then
         local img; img="$(mktemp -d)/share.jpg"
-        { share_prepare "$out" "$img" "$repo" && share_upload "$img" "$out" "$repo" "$subject"; } \
+        local ch; ch="$(repo_choice "$repo")"
+        { share_prepare "$out" "$img" "$ch" && share_upload "$img" "$out" "$repo" "$subject" "$ch"; } \
           || printf '%s auto-share failed for %s %s\n' "$now" "$repo" "$sha" >>"$LOG"
         rm -rf "$(dirname "$img")"
       fi
@@ -472,8 +473,47 @@ require_share() { [ "$(share_mode)" != off ] || die 'no share target – e.g. gi
 days_ago() { date -v-"$1"d +%F 2>/dev/null || date -d "-$1 days" +%F; }
 abspath() { case "$1" in /*) printf '%s' "$1" ;; *) printf '%s/%s' "$PWD" "$1" ;; esac; }
 
-# repo_choice <repo> → show | hide | (empty: not asked yet)
-repo_choice() { [ -f "$REPO_NAMES" ] && awk -F'\t' -v r="$1" '$1==r{v=$2} END{printf "%s", v}' "$REPO_NAMES"; }
+# Team settings in the shared drive, one choice for everyone (the same as the app):
+#   .meta/repos/<sha256 of the repo name>  "show<TAB>name" or "hide" – a hidden name only as a hash
+#   .meta/retention                        days: the longest anyone keeps shared pictures
+team_hash() { printf '%s' "$1" | { shasum -a 256 2>/dev/null || sha256sum; } | cut -c1-64; }
+# team_get <rel> – a team setting file from the share target (empty if there is none)
+team_get() {
+  local b; b="$(share_base)"
+  case "$(share_mode)" in
+    rclone) rclone cat "$b/$1" 2>/dev/null ;;
+    ssh)    ssh "${b%%:*}" "cat $(fq "${b#*:}/$1") 2>/dev/null" </dev/null ;;
+    local)  cat "$b/$1" 2>/dev/null ;;
+  esac
+  true
+}
+team_put() { local tmp rc; tmp="$(mktemp)"; printf '%s' "$2" >"$tmp"; share_put "$tmp" "$1"; rc=$?; rm -f "$tmp"; return $rc; }
+# team_choice <repo> → show | hide | (empty: the team hasn't decided)
+team_choice() { [ "$(share_mode)" = off ] || team_get "$META/repos/$(team_hash "$1")" | head -1 | cut -f1; }
+team_set_choice() {
+  if [ "$2" = show ]; then team_put "$META/repos/$(team_hash "$1")" "$(printf 'show\t%s\n' "$(printf '%s' "$1" | tr '\t\n' '  ')")"
+  else team_put "$META/repos/$(team_hash "$1")" "hide"$'\n'; fi
+}
+# repo_choice <repo> → show | hide | (empty: not asked yet). The team's choice
+# wins; this computer's answers (~/.lolcommits/repo-names.tsv) count until the team has one.
+repo_choice() {
+  local t; t="$(team_choice "$1")"
+  if [ -n "$t" ]; then printf '%s' "$t"; else local_choice "$1"; fi
+}
+local_choice() { [ -f "$REPO_NAMES" ] && awk -F'\t' -v r="$1" '$1==r{v=$2} END{printf "%s", v}' "$REPO_NAMES"; }
+# answer_repo_choice <repo> <show|hide> – the first answer becomes the team's; if the team
+# has decided meanwhile, its choice stays. Prints the choice in effect.
+answer_repo_choice() {
+  local v="$2" t; t="$(team_choice "$1")"
+  if [ -n "$t" ]; then v="$t"; elif [ "$(share_mode)" != off ]; then team_set_choice "$1" "$v" || return 1; fi
+  set_repo_choice "$1" "$v"; printf '%s' "$v"
+}
+# days to keep shared pictures (0 = keep): share.retention, at most the team's maximum
+retention_days() {
+  local m t; m="$(cfg share.retention 0)"; [ "$m" -gt 0 ] 2>/dev/null || m=0
+  t="$( [ "$(share_mode)" != off ] && team_get "$META/retention" | tr -dc 0-9)"; [ "${t:-0}" -gt 0 ] 2>/dev/null || t=0
+  if [ "$t" -gt 0 ] && { [ "$m" = 0 ] || [ "$t" -lt "$m" ]; }; then echo "$t"; else echo "$m"; fi
+}
 set_repo_choice() {
   mkdir -p "$LOLDIR"
   { [ -f "$REPO_NAMES" ] && awk -F'\t' -v r="$1" '$1!=r' "$REPO_NAMES"; printf '%s\t%s\n' "$1" "$2"; } >"$REPO_NAMES.tmp" \
@@ -485,8 +525,8 @@ repo_folder() {
   case "$f" in ""|"$OTHER_REPOS") f=repo ;; esac
   printf '%s' "$f"
 }
-# folder a picture of <repo> goes to
-share_folder() { if [ "$(repo_choice "$1")" = show ]; then repo_folder "$1"; else printf '%s' "$OTHER_REPOS"; fi; }
+# share_folder <repo> <show|hide|> – folder a picture of <repo> goes to
+share_folder() { if [ "$2" = show ]; then repo_folder "$1"; else printf '%s' "$OTHER_REPOS"; fi; }
 
 # share_put <local file> <remote rel path>
 share_put() {
@@ -533,21 +573,23 @@ share_pull() {    # mirror the team folder into $1 (deletions propagate)
   esac
 }
 
-# share_prepare <in.jpg> <out.jpg> <repo> – fresh JPEG without metadata; the
+# share_prepare <in.jpg> <out.jpg> <show|hide|> – fresh JPEG without metadata; the
 # label band at the top is blurred unless the repo may be shown by name
 share_prepare() {
   local vf="null"
-  [ "$(repo_choice "$3")" = show ] || vf="split[a][b];[b]crop=iw:110:0:0,boxblur=20:2[t];[a][t]overlay=0:0"
+  [ "$3" = show ] || vf="split[a][b];[b]crop=iw:110:0:0,boxblur=20:2[t];[a][t]overlay=0:0"
   ffmpeg -hide_banner -loglevel error -y -i "$1" -vf "$vf" -map_metadata -1 -fflags +bitexact -flags:v +bitexact -q:v 3 "$2"
 }
 
-# share_upload <prepared.jpg> <local file> <repo> <subject>
+# share_upload <prepared.jpg> <local file> <repo> <subject> <show|hide|> – the
+# choice the picture was prepared with; without a team choice yet it becomes the team's
 share_upload() {
-  local img="$1" f="$2" repo="$3" subject="$4" me name d stem side shown
+  local img="$1" f="$2" repo="$3" subject="$4" choice="$5" me name d stem side shown
+  if [ -n "$choice" ] && [ -z "$(team_choice "$repo")" ]; then team_set_choice "$repo" "$choice" || return 1; fi
   name="$(cfg share.name)"; me="$(share_me)" || return 1
   d="$(basename "$f")"; d="${d:0:8}"
-  stem="$(share_folder "$repo")/$d-$me-$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')"
-  shown="-"; [ "$(repo_choice "$repo")" = show ] && shown="$(printf '%s' "$repo" | tr '\t' ' ')"
+  stem="$(share_folder "$repo" "$choice")/$d-$me-$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')"
+  shown="-"; [ "$choice" = show ] && shown="$(printf '%s' "$repo" | tr '\t' ' ')"
   side="$(mktemp)"
   printf '%s\t%s\t%s\t%s\n' "${d:0:4}-${d:4:2}-${d:6:2}" "$(printf '%s' "$name" | tr '\t' ' ')" "$shown" "$subject" >"$side"
   if share_put "$img" "$stem.jpg" && share_put "$side" "$META/$stem.tsv"; then
@@ -558,7 +600,7 @@ share_upload() {
 
 # drop own shared pictures older than lolcommits.share.retention days (default 0 = keep)
 share_prune() {
-  local days cutoff stem; days="$(cfg share.retention 0)"
+  local days cutoff stem; days="$(retention_days)"
   [ "$days" -gt 0 ] 2>/dev/null || return 0
   cutoff="$(days_ago "$days" | tr -d -)"
   share_mine | while IFS= read -r stem; do
@@ -579,22 +621,25 @@ cmd_share() {
   [ -f "$SHARED" ] && cut -f1 "$SHARED" | grep -qxF "$f" && die "already shared: $f"
   local repo; repo="$(cut -f2 <<<"$row")"
   listed neverShare "$repo" && die "sharing is off for $repo (to allow it: git config --global --unset --fixed-value lolcommits.neverShare \"$repo\")"
-  if [ -z "$(repo_choice "$repo")" ] && [ -z "$yes" ]; then
-    # asked once per repo: client projects should stay anonymous
+  local ch; ch="$(repo_choice "$repo")"
+  if [ -z "$ch" ] && [ -z "$yes" ]; then
+    # asked once per repo (then the same for the whole team): client projects should stay anonymous
     printf 'May your team see the repo name "%s"? (folder "%s" instead of "%s") [y/N] ' "$repo" "$(repo_folder "$repo")" "$OTHER_REPOS"
     local yn=""; read -r yn </dev/tty || true
-    case "$yn" in y|Y|yes|j|J|ja) set_repo_choice "$repo" show ;; *) set_repo_choice "$repo" hide ;; esac
+    case "$yn" in y|Y|yes|j|J|ja) yn=show ;; *) yn=hide ;; esac
+    ch="$(answer_repo_choice "$repo" "$yn")" || die "could not save the choice in $(cfg share.target)"
+    [ "$ch" = "$yn" ] || info "your team already chose: $ch"
   fi
   local tmp; tmp="$(mktemp -d)"
-  share_prepare "$f" "$tmp/share.jpg" "$repo" || { rm -rf "$tmp"; die "could not prepare $f"; }
+  share_prepare "$f" "$tmp/share.jpg" "$ch" || { rm -rf "$tmp"; die "could not prepare $f"; }
   if [ -z "$yes" ]; then
     # show exactly what gets uploaded – check for people in the background
     info "$tmp/share.jpg"; open_file "$tmp/share.jpg"
-    printf 'Share this picture to %s/%s as "%s"? [y/N] ' "$(cfg share.target)" "$(share_folder "$repo")" "$(cfg share.name)"
+    printf 'Share this picture to %s/%s as "%s"? [y/N] ' "$(cfg share.target)" "$(share_folder "$repo" "$ch")" "$(cfg share.name)"
     local ans=""; read -r ans </dev/tty || true
     case "$ans" in y|Y|yes|j|J|ja) ;; *) rm -rf "$tmp"; info "not shared."; return 0 ;; esac
   fi
-  share_upload "$tmp/share.jpg" "$f" "$repo" "$(cut -f5 <<<"$row")"
+  share_upload "$tmp/share.jpg" "$f" "$repo" "$(cut -f5 <<<"$row")" "$ch"
   local rc=$?; rm -rf "$tmp"
   [ $rc = 0 ] && info "shared ✓" || die "upload failed"
 }
@@ -663,7 +708,7 @@ cmd_sync() {
 
 gallery_shared() {
   cmd_sync
-  local cutoff="0000" days; days="$(cfg share.retention 0)"
+  local cutoff="0000" days; days="$(retention_days)"
   [ "$days" -gt 0 ] 2>/dev/null && cutoff="$(days_ago "$days")"
   local out="$LOLDIR/gallery-shared.html" side tdir; tdir="$(team_dir)"
   local jpg rel

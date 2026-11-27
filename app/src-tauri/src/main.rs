@@ -9,6 +9,7 @@ mod remind;
 mod render;
 mod share;
 mod store;
+mod team;
 mod time;
 mod tray;
 mod update;
@@ -45,6 +46,8 @@ struct State {
     platform: String,
     shots: Vec<store::Shot>,
     sharing: bool,
+    /// the team's maximum for keeping shared pictures (days), if set
+    team_retention: Option<i64>,
     share_label: String,
     share_error: String,
     setup_done: bool,
@@ -88,6 +91,7 @@ fn get_state(app: AppHandle) -> State {
         platform: std::env::consts::OS.into(),
         shots: store::shots(),
         sharing: share::configured(),
+        team_retention: if share::configured() { team::retention() } else { None },
         share_label: cfg.get("share.label").cloned().or_else(|| cfg.get("share.target").cloned()).unwrap_or_default(),
         share_error: match share::target() {
             Err(e) if cfg.contains_key("share.target") => e,
@@ -204,13 +208,15 @@ struct RepoChoice {
     photos: bool,
     /// photos may be shared, they show in Review (lolcommits.neverShare)
     share: bool,
+    /// `show` is the team's choice (shared drive), not only this computer's
+    team: bool,
 }
 
 /// Every repo with photos, and whether it may appear by name in the team gallery.
 #[tauri::command(async)]
 fn repo_choices() -> Vec<RepoChoice> {
     let mut repos: Vec<String> = store::shots().into_iter().map(|s| s.repo).collect();
-    repos.extend(share::repo_choices().into_iter().map(|r| r.0));
+    repos.extend(share::local_repo_choices().into_iter().map(|r| r.0));
     repos.extend(config::get_all(share::SKIP));
     repos.extend(config::get_all(share::NEVER));
     repos.sort_by_key(|r| r.to_lowercase());
@@ -220,7 +226,7 @@ fn repo_choices() -> Vec<RepoChoice> {
         .map(|r| {
             let show = share::repo_choice(&r);
             let folder = if show == Some(true) { share::repo_folder(&r) } else { share::OTHER.to_string() };
-            RepoChoice { photos: share::photos_on(&r), share: share::may_share(&r), repo: r, show, folder }
+            RepoChoice { photos: share::photos_on(&r), share: share::may_share(&r), team: share::team_choice(&r).is_some(), repo: r, show, folder }
         })
         .collect()
 }
@@ -228,8 +234,26 @@ fn repo_choices() -> Vec<RepoChoice> {
 /// Asked once per repo before its first share; changeable in Settings.
 /// Applies to pictures shared from now on.
 #[tauri::command(async)]
-fn set_repo_choice(repo: String, show: bool) -> R<()> {
-    share::set_repo_choice(&repo, show)
+/// `first`: the answer to the question on the first share – if the team has
+/// decided meanwhile, its choice stays. Returns the choice now in effect.
+fn set_repo_choice(repo: String, show: bool, first: Option<bool>) -> R<bool> {
+    if first == Some(true) {
+        share::answer_repo_choice(&repo, show)
+    } else {
+        share::set_repo_choice(&repo, show).map(|_| show)
+    }
+}
+
+/// Team maximum for keeping shared pictures; None or 0 removes it.
+#[tauri::command(async)]
+fn set_team_retention(days: Option<i64>) -> R<()> {
+    team::set_retention(days)
+}
+
+/// Fetch the team settings (rclone: into the local copy).
+#[tauri::command(async)]
+fn refresh_team_settings() -> R<()> {
+    team::refresh()
 }
 
 /// Settings › Repos: photos on/off, sharing on/off.
@@ -670,7 +694,7 @@ fn main() {
             test_shot, preview, share_shot, unshare, forget, team, wrapped, timelapse, drive_folders, use_folder,
             rclone_status, sign_in_outdated, brew_install, rclone_connect, rclone_cancel, rclone_use, forget_many, folders, set_folders, disconnect_sharing, finish_setup,
             set_autostart, first_name, install_cli, privacy_doc, set_private,
-            repo_choices, set_repo_choice, set_repo_option, update_status, update_check, update_install
+            repo_choices, set_repo_choice, set_repo_option, set_team_retention, refresh_team_settings, update_status, update_check, update_install
         ])
         .setup(move |app| {
             #[cfg(target_os = "macos")]
@@ -695,10 +719,15 @@ fn main() {
             let h = handle.clone();
             remind::start(handle.clone(), move || show_main(&h, Some("review")));
             if share::configured() {
-                std::thread::spawn(|| match share::move_old_sidecars() {
-                    Ok(0) => {}
-                    Ok(n) => store::log(&format!("moved {n} sidecars into .meta/")),
-                    Err(e) => store::log(&format!("moving sidecars into .meta/ failed: {e}")),
+                std::thread::spawn(|| {
+                    match share::move_old_sidecars() {
+                        Ok(0) => {}
+                        Ok(n) => store::log(&format!("moved {n} sidecars into .meta/")),
+                        Err(e) => store::log(&format!("moving sidecars into .meta/ failed: {e}")),
+                    }
+                    if let Err(e) = team::refresh().and_then(|_| team::publish_local_choices()) {
+                        store::log(&format!("team settings: {e}"));
+                    }
                 });
             }
             let setup_done = config::get("setup").is_some();

@@ -9,7 +9,7 @@
 //! folder at the same time never edit the same file (no Drive conflict copies).
 //! Targets: a folder (Google Drive for desktop, NAS) or an rclone remote.
 use crate::store::{self, Shot};
-use crate::{config, render, time};
+use crate::{config, render, team as settings, time};
 use rand::Rng;
 use serde::Serialize;
 use std::fs;
@@ -81,22 +81,61 @@ fn me() -> Result<(String, String), String> {
 }
 
 // ------------------------------------------------------------ per-repo choice
-// ~/.lolcommits/repo-names.tsv: repo \t show|hide – asked once per repo.
+// Show the repo name in the team gallery? Asked once per repo. With a team
+// gallery it is a team setting (team.rs): the first person who shares from a
+// repo decides for everyone. ~/.lolcommits/repo-names.tsv (repo \t show|hide)
+// holds this computer's answers: used without a team gallery and until the
+// team has a value.
 
 fn names_path() -> PathBuf {
     config::lol_dir().join("repo-names.tsv")
 }
 
-/// Some(true) = show by name, Some(false) = keep hidden, None = not asked yet
-pub fn repo_choice(repo: &str) -> Option<bool> {
+fn local_choice(repo: &str) -> Option<bool> {
     store::tsv(&names_path(), 2).into_iter().find(|r| r[0] == repo).map(|r| r[1] == "show")
 }
 
-pub fn repo_choices() -> Vec<(String, bool)> {
+/// Some(true) = show by name, Some(false) = keep hidden, None = not asked yet
+pub fn repo_choice(repo: &str) -> Option<bool> {
+    team_choice(repo).or_else(|| local_choice(repo))
+}
+
+/// The team's choice, if there is a team gallery and it has one.
+pub fn team_choice(repo: &str) -> Option<bool> {
+    if configured() { settings::repo_choice(repo) } else { None }
+}
+
+pub fn local_repo_choices() -> Vec<(String, bool)> {
     store::tsv(&names_path(), 2).into_iter().map(|r| (r[0].clone(), r[1] == "show")).collect()
 }
 
+/// Change the choice – with a team gallery for everyone.
 pub fn set_repo_choice(repo: &str, show: bool) -> Result<(), String> {
+    if configured() {
+        settings::set_repo_choice(repo, show)?;
+    }
+    set_local_choice(repo, show)
+}
+
+/// Answer to "show the repo name?" on the first share. If the team has
+/// decided in the meantime, its choice stays and is returned.
+pub fn answer_repo_choice(repo: &str, show: bool) -> Result<bool, String> {
+    let show = if configured() {
+        match settings::fresh_repo_choice(repo)? {
+            Some(t) => t,
+            None => {
+                settings::set_repo_choice(repo, show)?;
+                show
+            }
+        }
+    } else {
+        show
+    };
+    set_local_choice(repo, show)?;
+    Ok(show)
+}
+
+fn set_local_choice(repo: &str, show: bool) -> Result<(), String> {
     let mut rows: Vec<String> = store::tsv(&names_path(), 2)
         .into_iter()
         .filter(|r| r[0] != repo)
@@ -128,7 +167,7 @@ fn shows_repo(repo: &str) -> bool {
 
 // ------------------------------------------------------------ storage backends
 
-fn rclone(args: &[&str]) -> Result<String, String> {
+pub(crate) fn rclone(args: &[&str]) -> Result<String, String> {
     let bin = config::which("rclone").ok_or("rclone is not installed")?;
     let out = config::cmd(bin.to_str().unwrap()).args(args.iter().take(1)).args(RCLONE_FLAGS).args(args.iter().skip(1)).output().map_err(|e| e.to_string())?;
     if out.status.success() {
@@ -138,7 +177,7 @@ fn rclone(args: &[&str]) -> Result<String, String> {
     }
 }
 
-fn put(t: &Target, src: &Path, rel: &str) -> Result<(), String> {
+pub(crate) fn put(t: &Target, src: &Path, rel: &str) -> Result<(), String> {
     match t {
         Target::Folder(base) => {
             let dst = base.join(rel);
@@ -166,7 +205,7 @@ fn put_pair(t: &Target, img: &Path, side: &Path, stem: &str) -> Result<(), Strin
     res
 }
 
-fn rm(t: &Target, rel: &str) -> Result<(), String> {
+pub(crate) fn rm(t: &Target, rel: &str) -> Result<(), String> {
     match t {
         Target::Folder(base) => {
             let p = base.join(rel);
@@ -249,7 +288,7 @@ fn mine(t: &Target, me: &str) -> Result<Vec<(String, String)>, String> {
     Ok(v)
 }
 
-fn tmp_file(name: &str) -> PathBuf {
+pub(crate) fn tmp_file(name: &str) -> PathBuf {
     let d = config::lol_dir().join(".preview");
     let _ = fs::create_dir_all(&d);
     d.join(name)
@@ -264,8 +303,12 @@ pub fn clear_previews() {
 /// The picture as it will be uploaded: no metadata, hash and repo label
 /// blurred unless the person allowed this repo by name.
 pub fn prepare(shot: &Shot) -> Result<PathBuf, String> {
+    prepare_as(shot, shows_repo(&shot.repo))
+}
+
+fn prepare_as(shot: &Shot, show: bool) -> Result<PathBuf, String> {
     let img = render::load(Path::new(&shot.file))?;
-    let img = if shows_repo(&shot.repo) {
+    let img = if show {
         img
     } else {
         render::blur_rects(&img, &render::label_rects(img.width(), &shot.sha, &shot.repo, &shot.branch))
@@ -275,9 +318,17 @@ pub fn prepare(shot: &Shot) -> Result<PathBuf, String> {
     Ok(out)
 }
 
-/// Where a shot goes: its repo folder, or other-repos.
-pub fn folder_for(shot: &Shot) -> String {
-    if shows_repo(&shot.repo) { repo_folder(&shot.repo) } else { OTHER.into() }
+/// Show the repo name for this upload? Asks the drive, not the mirror, so a
+/// stale copy can't put a name in the drive that the team hides. Without a
+/// team value yet this computer's answer becomes the team's.
+fn show_for_upload(repo: &str) -> Result<bool, String> {
+    if let Some(t) = settings::fresh_repo_choice(repo)? {
+        return Ok(t);
+    }
+    match local_choice(repo) {
+        Some(v) => settings::set_repo_choice(repo, v).map(|_| v),
+        None => Ok(false), // not asked (e.g. auto-share): hidden, and nothing decided for the team
+    }
 }
 
 pub fn upload(shot: &Shot) -> Result<(), String> {
@@ -289,11 +340,13 @@ pub fn upload(shot: &Shot) -> Result<(), String> {
     if store::shared_rows().iter().any(|(l, _)| l == &shot.file) {
         return Err("already shared".into());
     }
-    let img = prepare(shot)?;
+    let show = show_for_upload(&shot.repo)?;
+    let img = prepare_as(shot, show)?;
     let base = Path::new(&shot.file).file_name().unwrap().to_string_lossy().to_string();
     let d = base.get(..8).filter(|d| d.chars().all(|c| c.is_ascii_digit())).unwrap_or("00000000").to_string();
-    let stem = format!("{}/{d}-{me}-{:08x}", folder_for(shot), rand::thread_rng().gen::<u32>());
-    let repo = if shows_repo(&shot.repo) { shot.repo.replace('\t', " ") } else { "-".into() };
+    let folder = if show { repo_folder(&shot.repo) } else { OTHER.into() };
+    let stem = format!("{folder}/{d}-{me}-{:08x}", rand::thread_rng().gen::<u32>());
+    let repo = if show { shot.repo.replace('\t', " ") } else { "-".into() };
     let side = tmp_file("sidecar.tsv");
     fs::write(&side, format!("{}-{}-{}\t{}\t{}\t{}\n", &d[..4], &d[4..6], &d[6..8], name.replace('\t', " "), repo, shot.subject.replace(['\t', '\n'], " ")))
         .map_err(|e| e.to_string())?;
@@ -309,9 +362,19 @@ pub fn upload(shot: &Shot) -> Result<(), String> {
     Ok(())
 }
 
-/// lolcommits.share.retention days – off (0) unless the user sets it.
+/// Days to keep shared pictures (0 = keep): lolcommits.share.retention, at
+/// most the team's maximum. A person can delete earlier, not keep longer.
+pub fn retention_days() -> i64 {
+    let mine: i64 = config::get("share.retention").and_then(|d| d.parse().ok()).filter(|d| *d > 0).unwrap_or(0);
+    match (mine, if configured() { settings::retention() } else { None }) {
+        (0, Some(t)) => t,
+        (m, Some(t)) => m.min(t),
+        (m, None) => m,
+    }
+}
+
 fn prune() {
-    let days: i64 = config::get("share.retention").and_then(|d| d.parse().ok()).unwrap_or(0);
+    let days = retention_days();
     if days <= 0 {
         return;
     }
@@ -416,7 +479,7 @@ pub fn sync() -> Result<(), String> {
 pub fn team() -> Result<Vec<TeamRow>, String> {
     let dir = team_dir()?;
     let me = config::get("share.name").map(|n| slug(&n)).unwrap_or_default();
-    let days: i64 = config::get("share.retention").and_then(|d| d.parse().ok()).unwrap_or(0);
+    let days = retention_days();
     let cutoff = if days > 0 { time::days_ago(days).format("%Y-%m-%d").to_string() } else { String::new() };
     let mut rows = Vec::new();
     for rel in list(&Target::Folder(dir.clone()))? {

@@ -1,7 +1,7 @@
 //! End-to-end tests of the app logic against a temporary home: fake Google
 //! Drive for desktop folder, own git config, test pattern instead of the camera.
 use crate::store::Shot;
-use crate::{capture, config, drive, render, share, store};
+use crate::{capture, config, drive, render, share, store, team};
 use std::fs;
 use std::path::PathBuf;
 
@@ -174,6 +174,58 @@ fn full_flow() {
     config::set_listed(share::SKIP, "repo", false).unwrap();
     assert_eq!(config::get_all(share::SKIP), vec!["client.app"]);
     config::set_listed(share::SKIP, "client.app", false).unwrap();
+
+    // team settings: one file per repo in .meta/repos/, a hidden name only as a hash
+    share::set_repo_choice("acme-shop", false).unwrap();
+    share::set_repo_choice("repo", true).unwrap();
+    let team_files = || -> String {
+        fs::read_dir(target.join(".meta/repos")).unwrap().flatten()
+            .map(|e| e.file_name().to_string_lossy().to_string() + ":" + &fs::read_to_string(e.path()).unwrap()).collect()
+    };
+    assert!(!team_files().contains("acme-shop"), "{}", team_files());
+    assert!(team_files().contains("show\trepo"), "shown names stay readable: {}", team_files());
+    assert_eq!(share::repo_choice("acme-shop"), Some(false));
+    // the first answer becomes the team's; a later one doesn't overrule it
+    assert!(share::answer_repo_choice("acme-shop", true).unwrap() == false, "the team hides it");
+    assert_eq!(share::repo_choice("acme-shop"), Some(false));
+    assert!(share::answer_repo_choice("new-repo", true).unwrap());
+    assert_eq!(team::fresh_repo_choice("new-repo").unwrap(), Some(true));
+    // changing it in Settings changes it for everyone
+    share::set_repo_choice("new-repo", false).unwrap();
+    assert_eq!(team::fresh_repo_choice("new-repo").unwrap(), Some(false));
+
+    // choices from before team settings: published once, the stricter one wins
+    let names = config::lol_dir().join("repo-names.tsv");
+    let before_names = fs::read_to_string(&names).unwrap();
+    fs::write(&names, before_names.clone() + "only-mine\tshow\nconflict\tshow\n").unwrap();
+    team::set_repo_choice("conflict", false).unwrap();
+    team::set_repo_choice("repo", false).unwrap(); // a teammate hid it meanwhile; locally it is shown
+    let n = team::publish_local_choices().unwrap();
+    assert_eq!(team::fresh_repo_choice("only-mine").unwrap(), Some(true));
+    assert_eq!(team::fresh_repo_choice("conflict").unwrap(), Some(false), "hide wins");
+    assert_eq!(team::fresh_repo_choice("repo").unwrap(), Some(false), "hide wins");
+    assert_eq!(n, 1, "only the repo the team didn't know");
+    assert_eq!(team::publish_local_choices().unwrap(), 0, "once per team gallery");
+    // the team's choice wins over this computer's, also for the upload
+    assert_eq!(share::repo_choice("repo"), Some(false));
+    let e = shoot("team hides it", "20261125-100500-abc1234567");
+    share::upload(&e).unwrap();
+    assert!(store::shared_rows().iter().any(|(l, r)| l == &e.file && r.starts_with("other-repos/")), "{:?}", store::shared_rows());
+    share::unshare(&e.file).unwrap();
+    share::set_repo_choice("repo", true).unwrap();
+
+    // retention: the team's value is a maximum
+    config::set("share.retention", "").unwrap();
+    team::set_retention(Some(30)).unwrap();
+    assert_eq!(share::retention_days(), 30);
+    config::set("share.retention", "60").unwrap();
+    assert_eq!(share::retention_days(), 30, "can't keep longer than the team");
+    config::set("share.retention", "10").unwrap();
+    assert_eq!(share::retention_days(), 10, "may delete earlier");
+    team::set_retention(None).unwrap();
+    assert!(!target.join(".meta/retention").exists());
+    assert_eq!(share::retention_days(), 10);
+    config::set("share.retention", "").unwrap();
 
     // review: swiping left keeps a picture private, undo brings it back
     store::set_private(&b.file, true).unwrap();
