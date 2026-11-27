@@ -8,6 +8,7 @@ mod queue;
 mod render;
 mod share;
 mod store;
+mod time;
 mod tray;
 mod update;
 #[cfg(test)]
@@ -140,8 +141,7 @@ fn pause_for(minutes: i64) -> R<()> {
     match minutes {
         0 => config::set("enabled", "false"),
         -1 => {
-            let tomorrow = (chrono::Local::now() + chrono::Duration::days(1)).date_naive().and_hms_opt(6, 0, 0).unwrap();
-            let t = tomorrow.and_local_timezone(chrono::Local).single().map(|d| d.timestamp()).unwrap_or(config::now_unix() + 86400);
+            let t = time::tomorrow_at(6).unwrap_or(config::now_unix() + 86400);
             config::set("pausedUntil", &t.to_string())
         }
         m => config::set("pausedUntil", &(config::now_unix() + m * 60).to_string()),

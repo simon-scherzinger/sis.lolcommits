@@ -1,7 +1,7 @@
 //! Menu bar icon: drawn at runtime as a template image (macOS tints it for
 //! light/dark menu bars). The lens closes like a shutter and a flash fires
 //! while a photo is being taken.
-use crate::{config, share, store, update};
+use crate::{config, share, store, time, update};
 use image::{Rgba, RgbaImage};
 use imageproc::drawing::{draw_filled_circle_mut, draw_filled_rect_mut, draw_line_segment_mut};
 use imageproc::rect::Rect;
@@ -138,8 +138,7 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     let status = match (&paused, shots.first()) {
         (Some(t), _) if *t == i64::MAX => "⏸ Paused".to_string(),
         (Some(t), _) => {
-            let until = chrono::DateTime::from_timestamp(*t, 0).map(|d| d.with_timezone(&chrono::Local)).map(|d| d.format("%H:%M").to_string()).unwrap_or_default();
-            format!("⏸ Paused until {until}")
+            format!("⏸ Paused until {}", time::clock(*t))
         }
         (None, Some(s)) => format!("Last photo {} – {}", ago(&s.ts), short(&s.subject, 28)),
         (None, None) => "No photos yet – commit something".into(),

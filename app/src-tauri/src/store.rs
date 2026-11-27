@@ -1,6 +1,6 @@
 //! The local picture store: ~/.lolcommits/<repo>/<file>.jpg plus index.tsv and
 //! shared.tsv – the same files the command line tool reads and writes.
-use crate::config;
+use crate::{config, time};
 use serde::Serialize;
 use std::fs;
 use std::io::Write;
@@ -145,7 +145,7 @@ pub fn prune_local() {
     if days <= 0 {
         return;
     }
-    let cutoff = (chrono::Local::now() - chrono::Duration::days(days)).format("%Y-%m-%d").to_string();
+    let cutoff = time::days_ago(days).format("%Y-%m-%d").to_string();
     let (old, keep): (Vec<_>, Vec<_>) =
         tsv(&index_path(), 6).into_iter().partition(|r| r[0].get(..10).unwrap_or("") < cutoff.as_str());
     if old.is_empty() {

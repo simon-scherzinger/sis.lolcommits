@@ -9,7 +9,7 @@
 //! folder at the same time never edit the same file (no Drive conflict copies).
 //! Targets: a folder (Google Drive for desktop, NAS) or an rclone remote.
 use crate::store::{self, Shot};
-use crate::{config, render};
+use crate::{config, render, time};
 use rand::Rng;
 use serde::Serialize;
 use std::fs;
@@ -298,7 +298,7 @@ fn prune() {
         return;
     }
     let (Ok(t), Ok((_, me))) = (target(), me()) else { return };
-    let cutoff = (chrono::Local::now() - chrono::Duration::days(days)).format("%Y%m%d").to_string();
+    let cutoff = time::days_ago(days).format("%Y%m%d").to_string();
     for (date, stem) in mine(&t, &me).unwrap_or_default() {
         if date < cutoff {
             let _ = rm_pair(&t, &stem);
@@ -399,7 +399,7 @@ pub fn team() -> Result<Vec<TeamRow>, String> {
     let dir = team_dir()?;
     let me = config::get("share.name").map(|n| slug(&n)).unwrap_or_default();
     let days: i64 = config::get("share.retention").and_then(|d| d.parse().ok()).unwrap_or(0);
-    let cutoff = if days > 0 { (chrono::Local::now() - chrono::Duration::days(days)).format("%Y-%m-%d").to_string() } else { String::new() };
+    let cutoff = if days > 0 { time::days_ago(days).format("%Y-%m-%d").to_string() } else { String::new() };
     let mut rows = Vec::new();
     for rel in list(&Target::Folder(dir.clone()))? {
         let Some(stem) = rel.strip_suffix(".jpg") else { continue };
