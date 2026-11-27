@@ -1027,7 +1027,7 @@ function renderRepos() {
     : (r.show ? "→ " + r.folder : "→ other-repos") + (r.team ? " · set by the team" : "");
   const grid = h("div", {class: "repo-grid", style: "--cols:" + (team ? 3 : 1)},
     h("span", {class: "th"}, "Repo"), h("span", {class: "th"}, "Photos"), team && h("span", {class: "th"}, "Share"), team && h("span", {class: "th"}, "Name"),
-    repos.map(r => [
+    repos.flatMap(r => [
       h("span", {class: "nm", title: r.repo}, r.repo, team && h("small", null, where(r))),
       option(r, "photos", "Photos in"),
       team && option(r, "share", "Share from"),
