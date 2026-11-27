@@ -432,13 +432,16 @@ cmd_gallery() {
 #   <host>:<path>            a server over ssh
 #   <path>                   a local or mounted directory (Google Drive for desktop)
 # Layout, sorted by repo (the same as lolcommits.app):
-#   <repo>/<YYYYmmdd>-<person>-<rand>.jpg  +  .tsv sidecar (date, name, repo or "-", subject)
+#   <repo>/<YYYYmmdd>-<person>-<rand>.jpg
+#   .meta/<repo>/<YYYYmmdd>-<person>-<rand>.tsv  sidecar (date, name, repo or "-", subject)
+# Older versions put the sidecar next to the picture; those are still read and deleted.
 # Repos not allowed by name go to other-repos/ with the label blurred.
 # One sidecar per picture, so people sharing at the same time never edit one file.
 SHARED="$LOLDIR/shared.tsv"         # local file \t remote path
 REPO_NAMES="$LOLDIR/repo-names.tsv" # repo \t show|hide – asked once per repo
 CACHE="$LOLDIR/.shared"
 OTHER_REPOS="other-repos"
+META=".meta"                        # hidden folder for the sidecars
 RCLONE_FLAGS=(--drive-use-trash=false)   # really delete on Google Drive, no 30-day trash
 
 share_mode() {
@@ -501,6 +504,8 @@ share_rm() {
     local)  rm -f "$b/$1" && { rmdir "$(dirname "$b/$1")" 2>/dev/null; true; } ;;
   esac
 }
+# share_rm_side <folder>/<stem> – the sidecar in .meta/ and the one older versions put next to the picture
+share_rm_side() { share_rm "$META/$1.tsv"; share_rm "$1.tsv"; }
 # all pictures in the target as <folder>/<file>.jpg
 share_ls() {
   local b; b="$(share_base)"
@@ -540,7 +545,7 @@ share_upload() {
   shown="-"; [ "$(repo_choice "$repo")" = show ] && shown="$(printf '%s' "$repo" | tr '\t' ' ')"
   side="$(mktemp)"
   printf '%s\t%s\t%s\t%s\n' "${d:0:4}-${d:4:2}-${d:6:2}" "$(printf '%s' "$name" | tr '\t' ' ')" "$shown" "$subject" >"$side"
-  if share_put "$img" "$stem.jpg" && share_put "$side" "$stem.tsv"; then
+  if share_put "$img" "$stem.jpg" && share_put "$side" "$META/$stem.tsv"; then
     printf '%s\t%s\n' "$f" "$stem.jpg" >>"$SHARED"; rm -f "$side"; share_prune; return 0
   fi
   share_rm "$stem.jpg" 2>/dev/null; rm -f "$side"; return 1
@@ -554,7 +559,7 @@ share_prune() {
   share_mine | while IFS= read -r stem; do
     local fn="${stem##*/}"
     [ "${fn:0:8}" \< "$cutoff" ] || continue
-    share_rm "$stem.jpg"; share_rm "$stem.tsv"
+    share_rm "$stem.jpg"; share_rm_side "$stem"
     [ -f "$SHARED" ] && { awk -F'\t' -v r="$stem.jpg" '$2!=r' "$SHARED" >"$SHARED.tmp"; mv -f "$SHARED.tmp" "$SHARED"; }
   done
 }
@@ -595,7 +600,7 @@ cmd_unshare() {
     # every picture of mine, also those shared from other computers
     local stem n=0
     while IFS= read -r stem; do
-      share_rm "$stem.jpg" || die "could not delete $stem.jpg"; share_rm "$stem.tsv"; n=$((n + 1))
+      share_rm "$stem.jpg" || die "could not delete $stem.jpg"; share_rm_side "$stem"; n=$((n + 1))
     done < <(share_mine)
     rm -f "$SHARED"; info "removed $n shared pictures of yours from $(cfg share.target) ✓"; return
   fi
@@ -605,7 +610,7 @@ cmd_unshare() {
   rel="$(awk -F'\t' -v f="$f" '$1==f{print $2}' "$SHARED" | tail -1)"
   [ -n "$rel" ] || die "not shared: $f"
   share_rm "$rel" || die "could not delete $rel"
-  share_rm "${rel%.jpg}.tsv"
+  share_rm_side "${rel%.jpg}"
   awk -F'\t' -v f="$f" '$1!=f' "$SHARED" >"$SHARED.tmp" && mv -f "$SHARED.tmp" "$SHARED"
   info "unshared ✓ $f"
 }
@@ -655,9 +660,13 @@ gallery_shared() {
   local cutoff="0000" days; days="$(cfg share.retention 0)"
   [ "$days" -gt 0 ] 2>/dev/null && cutoff="$(days_ago "$days")"
   local out="$LOLDIR/gallery-shared.html" side tdir; tdir="$(team_dir)"
-  for side in "$tdir"/*/*.tsv; do
-    [ -f "$side" ] && [ -f "${side%.tsv}.jpg" ] || continue
-    awk -F'\t' -v f="${side%.tsv}.jpg" -v c="$cutoff" 'BEGIN{OFS="\t"} NR==1 && $1>=c {print $1,$2,($3==""?"-":$3),"-",$4,f}' "$side"
+  local jpg rel
+  for jpg in "$tdir"/*/*.jpg; do   # * skips the hidden .meta folder
+    [ -f "$jpg" ] || continue
+    rel="${jpg#"$tdir"/}"; side="$tdir/$META/${rel%.jpg}.tsv"
+    [ -f "$side" ] || side="${jpg%.jpg}.tsv"   # older versions: next to the picture
+    [ -f "$side" ] || continue
+    awk -F'\t' -v f="$jpg" -v c="$cutoff" 'BEGIN{OFS="\t"} NR==1 && $1>=c {print $1,$2,($3==""?"-":$3),"-",$4,f}' "$side"
   done | sort -r | gallery_html "lolcommits · team" "everyone" >"$out"
   info "$out"; open_file "$out"
 }

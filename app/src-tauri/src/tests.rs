@@ -66,17 +66,18 @@ fn full_flow() {
     share::upload(&a).unwrap();
     assert!(share::upload(&a).is_err(), "no double share");
     let other: Vec<_> = fs::read_dir(target.join("other-repos")).unwrap().flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect();
-    assert_eq!(other.len(), 2, "jpg + sidecar: {other:?}");
-    assert!(other.iter().all(|f| f.starts_with("20261125-juergen-gross-")), "{other:?}");
-    let side = other.iter().find(|f| f.ends_with(".tsv")).unwrap();
-    let meta = fs::read_to_string(target.join("other-repos").join(side)).unwrap();
+    assert_eq!(other.len(), 1, "only the picture, the sidecar is in .meta/: {other:?}");
+    assert!(other[0].starts_with("20261125-juergen-gross-") && other[0].ends_with(".jpg"), "{other:?}");
+    let side = other[0].replace(".jpg", ".tsv");
+    let meta = fs::read_to_string(target.join(".meta/other-repos").join(&side)).unwrap();
     assert_eq!(meta, "2026-11-25\tJürgen Groß\t-\tfirst: tabs and stuff\n");
 
     // repo allowed by name → its own folder, not blurred
     share::set_repo_choice("repo", true).unwrap();
     share::upload(&b).unwrap();
     let in_repo = fs::read_dir(target.join("repo")).unwrap().count();
-    assert_eq!(in_repo, 2);
+    assert_eq!(in_repo, 1);
+    assert_eq!(fs::read_dir(target.join(".meta/repo")).unwrap().count(), 1);
     let team = share::team().unwrap();
     assert_eq!(team.len(), 2);
     assert!(team.iter().all(|r| r.mine && r.name == "Jürgen Groß"));
@@ -84,16 +85,28 @@ fn full_flow() {
     assert!(store::shots().iter().all(|s| s.shared));
 
     // same day: the most recently shared picture comes first, not the folder order ("repo" > "other-repos")
-    let first_jpg = target.join("other-repos").join(other.iter().find(|f| f.ends_with(".jpg")).unwrap());
+    let first_jpg = target.join("other-repos").join(&other[0]);
     let later = std::time::SystemTime::now() + std::time::Duration::from_secs(60);
     fs::File::options().write(true).open(&first_jpg).unwrap().set_modified(later).unwrap();
     let order: Vec<_> = share::team().unwrap().into_iter().map(|r| r.subject).collect();
     assert_eq!(order, ["first: tabs and stuff", "second"]);
 
-    // a teammate's picture in the same folder is not mine and survives my unshare-all
+    // a teammate's picture in the same folder is not mine and survives my unshare-all;
+    // shared by an older version, so its sidecar is still next to the picture
     fs::write(target.join("repo/20261124-kim-0000abcd.jpg"), fs::read(&a.file).unwrap()).unwrap();
     fs::write(target.join("repo/20261124-kim-0000abcd.tsv"), "2026-11-24\tKim\trepo\tship it\n").unwrap();
     assert_eq!(share::team().unwrap().iter().filter(|r| !r.mine).count(), 1);
+
+    // my own old-style sidecars move into .meta/ (not the teammate's), the picture still shows
+    fs::write(target.join("repo/20201231-juergen-gross-00000002.jpg"), fs::read(&a.file).unwrap()).unwrap();
+    fs::write(target.join("repo/20201231-juergen-gross-00000002.tsv"), "2020-12-31\tJürgen Groß\trepo\tlegacy\n").unwrap();
+    assert_eq!(share::move_old_sidecars().unwrap(), 1);
+    assert!(target.join(".meta/repo/20201231-juergen-gross-00000002.tsv").is_file());
+    assert!(!target.join("repo/20201231-juergen-gross-00000002.tsv").exists());
+    assert!(target.join("repo/20261124-kim-0000abcd.tsv").is_file());
+    assert_eq!(share::move_old_sidecars().unwrap(), 0, "nothing left to move");
+    assert!(share::team().unwrap().iter().any(|r| r.subject == "legacy"));
+    assert!(!share::team().unwrap().iter().any(|r| r.file.contains(".meta")), ".meta/ is not a repo folder");
 
     // no expiry by default: an old picture of mine survives the next upload
     fs::write(target.join("repo/20200101-juergen-gross-00000001.jpg"), b"x").unwrap();
@@ -107,7 +120,9 @@ fn full_flow() {
     let d = shoot("fourth", "20261125-100300-abc1234567");
     share::upload(&d).unwrap();
     assert!(!target.join("repo/20200101-juergen-gross-00000001.jpg").exists());
-    assert!(!target.join("repo/20200101-juergen-gross-00000001.tsv").exists());
+    assert!(!target.join("repo/20200101-juergen-gross-00000001.tsv").exists(), "old-style sidecar goes too");
+    assert!(!target.join("repo/20201231-juergen-gross-00000002.jpg").exists());
+    assert!(!target.join(".meta/repo/20201231-juergen-gross-00000002.tsv").exists(), "sidecar in .meta/ goes too");
     assert!(target.join("repo/20261124-kim-0000abcd.jpg").exists());
     config::set("share.retention", "").unwrap();
 
@@ -130,12 +145,14 @@ fn full_flow() {
     // unshare one: jpg and sidecar go, empty folder too
     share::unshare(&a.file).unwrap();
     assert!(!target.join("other-repos").exists());
+    assert!(!target.join(".meta/other-repos").exists());
     assert!(!store::find(&a.file).unwrap().shared);
 
     // unshare all removes only my pictures
     share::unshare_all().unwrap();
     let left: Vec<_> = fs::read_dir(target.join("repo")).unwrap().flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect();
     assert_eq!(left.len(), 2, "only Kim's picture is left: {left:?}");
+    assert!(!target.join(".meta/repo").exists(), "my sidecars in .meta/ are gone too");
     assert!(store::shared_rows().is_empty());
 
     // review: swiping left keeps a picture private, undo brings it back

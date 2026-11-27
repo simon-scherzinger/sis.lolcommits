@@ -16,6 +16,7 @@
 - **Review intro tells the truth:** it no longer says the repo name is always blurred. Repos you show by name aren't blurred.
 - **Team gallery problem banner** has a "Change team gallery…" button, so you can switch to a target the app can use (an ssh target set up from the command line only works there).
 - **Review oldest first:** the Review stack starts with the oldest photo, so you go through them in the order they were taken. My shots still shows the newest first.
+- **Only pictures in the repo folders:** the small `.tsv` file with date, name and commit message that goes with each shared picture now sits in a hidden `.meta/` folder of the team gallery instead of next to the picture. The app moves the ones of your own pictures there on its next start. Pictures shared by older versions still show, and deleting removes the file in both places. Teammates need this version (app or command line tool) to see pictures shared with it.
 - **Only deleting is red:** confirmations like "Show name" or "Share every photo automatically" use the normal button.
 
 ## 0.5.3

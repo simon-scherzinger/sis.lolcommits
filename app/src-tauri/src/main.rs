@@ -669,6 +669,13 @@ fn main() {
             queue::start(handle.clone());
             watch(handle.clone());
             update::start(handle.clone());
+            if share::configured() {
+                std::thread::spawn(|| match share::move_old_sidecars() {
+                    Ok(0) => {}
+                    Ok(n) => store::log(&format!("moved {n} sidecars into .meta/")),
+                    Err(e) => store::log(&format!("moving sidecars into .meta/ failed: {e}")),
+                });
+            }
             let setup_done = config::get("setup").is_some();
             if !background || !setup_done {
                 show_main(&handle, None);

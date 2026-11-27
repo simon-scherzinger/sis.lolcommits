@@ -54,7 +54,7 @@ You can change the choice per repo in Settings. It applies to pictures you share
 
 **What gets uploaded:**
 - the picture without metadata, with the hash and repo label blurred unless the repo is shown by name
-- one small sidecar file per picture: the date (no time of day), your name, the repo (if shown) and the commit message
+- one small sidecar file per picture in the hidden `.meta/` folder: the date (no time of day), your name, the repo (if shown) and the commit message
 
 Files are named `<date>-<person>-<random>`, so several people can share into the same folder without conflicts.
 Shared pictures stay until you take them back, unless you set an expiry in Settings.

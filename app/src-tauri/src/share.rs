@@ -1,6 +1,9 @@
 //! The team gallery, sorted by repo:
 //!   <target>/<repo>/<YYYYmmdd>-<person>-<rand>.jpg
-//!   <target>/<repo>/<YYYYmmdd>-<person>-<rand>.tsv   (date, name, repo or "-", subject)
+//!   <target>/.meta/<repo>/<YYYYmmdd>-<person>-<rand>.tsv   (date, name, repo or "-", subject)
+//! The sidecars sit in the hidden .meta folder so the repo folders show only
+//! pictures. Older versions put them next to the picture; those are still read
+//! and deleted, and the app moves the person's own into .meta/ on start.
 //! Repos the person didn't allow by name go to <target>/other-repos/ with the
 //! repo label blurred. One sidecar per picture, so people sharing into the same
 //! folder at the same time never edit the same file (no Drive conflict copies).
@@ -14,6 +17,13 @@ use std::path::{Path, PathBuf};
 
 const RCLONE_FLAGS: [&str; 1] = ["--drive-use-trash=false"];
 pub const OTHER: &str = "other-repos";
+/// Hidden folder for sidecars (and later team settings).
+pub const META: &str = ".meta";
+
+/// Sidecar of the picture <folder>/<name>: .meta/<folder>/<name>.tsv
+fn side_rel(stem: &str) -> String {
+    format!("{META}/{stem}.tsv")
+}
 
 #[derive(Debug, Clone)]
 pub enum Target {
@@ -124,19 +134,19 @@ fn put(t: &Target, src: &Path, rel: &str) -> Result<(), String> {
     }
 }
 
-/// Picture and sidecar to <stem>.jpg / <stem>.tsv. On rclone one call for
-/// both: one sign-in, the folder created once, both files in parallel.
+/// Picture and sidecar to <stem>.jpg / .meta/<stem>.tsv. On rclone one call
+/// for both: one sign-in, the folders created once, both files in parallel.
 fn put_pair(t: &Target, img: &Path, side: &Path, stem: &str) -> Result<(), String> {
     let Target::Rclone(base) = t else {
-        return put(t, img, &format!("{stem}.jpg")).and_then(|_| put(t, side, &format!("{stem}.tsv")));
+        return put(t, img, &format!("{stem}.jpg")).and_then(|_| put(t, side, &side_rel(stem)));
     };
-    let (folder, name) = stem.rsplit_once('/').unwrap_or(("", stem));
+    // the same layout in a temporary folder, copied over as a whole
     let dir = tmp_file(&format!("up-{:08x}", rand::thread_rng().gen::<u32>()));
-    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let res = fs::copy(img, dir.join(format!("{name}.jpg")))
-        .and_then(|_| fs::copy(side, dir.join(format!("{name}.tsv"))))
+    let res = [(img, dir.join(format!("{stem}.jpg"))), (side, dir.join(side_rel(stem)))]
+        .iter()
+        .try_for_each(|(src, dst)| fs::create_dir_all(dst.parent().unwrap()).and_then(|_| fs::copy(src, dst)).map(|_| ()))
         .map_err(|e| e.to_string())
-        .and_then(|_| rclone(&["copy", dir.to_str().unwrap(), &format!("{base}/{folder}")]).map(|_| ()));
+        .and_then(|_| rclone(&["copy", dir.to_str().unwrap(), base]).map(|_| ()));
     let _ = fs::remove_dir_all(&dir);
     res
 }
@@ -177,16 +187,16 @@ fn rclone_rm(path: &str) -> Result<(), String> {
     }
 }
 
-/// All files in the target as "<folder>/<file>".
+/// All files in the repo folders as "<folder>/<file>" (not in .meta/).
 fn list(t: &Target) -> Result<Vec<String>, String> {
     match t {
         Target::Folder(base) => {
             let mut out = Vec::new();
             for d in fs::read_dir(base).map_err(|e| format!("{}: {e}", base.display()))?.flatten() {
-                if !d.path().is_dir() {
+                let folder = d.file_name().to_string_lossy().to_string();
+                if !d.path().is_dir() || folder.starts_with('.') {
                     continue;
                 }
-                let folder = d.file_name().to_string_lossy().to_string();
                 for f in fs::read_dir(d.path()).into_iter().flatten().flatten() {
                     out.push(format!("{folder}/{}", f.file_name().to_string_lossy()));
                 }
@@ -195,7 +205,7 @@ fn list(t: &Target) -> Result<Vec<String>, String> {
         }
         Target::Rclone(base) => Ok(rclone(&["lsf", "-R", "--files-only", "--max-depth", "2", base])?
             .lines()
-            .filter(|l| l.contains('/'))
+            .filter(|l| l.contains('/') && !l.starts_with('.'))
             .map(String::from)
             .collect()),
     }
@@ -297,13 +307,43 @@ fn prune() {
     }
 }
 
-/// Picture and sidecar at once: on Drive each delete is a round trip.
+/// Picture and sidecar (in .meta/ and, from older versions, next to the
+/// picture) at once: on Drive each delete is a round trip.
 fn rm_pair(t: &Target, stem: &str) -> Result<(), String> {
-    let (jpg, tsv) = std::thread::scope(|s| {
-        let tsv = s.spawn(|| rm(t, &format!("{stem}.tsv")));
-        (rm(t, &format!("{stem}.jpg")), tsv.join().unwrap_or_else(|_| Err("delete failed".into())))
-    });
-    jpg.and(tsv)
+    let rels = [format!("{stem}.jpg"), side_rel(stem), format!("{stem}.tsv")];
+    std::thread::scope(|s| {
+        let jobs: Vec<_> = rels.iter().map(|rel| s.spawn(move || rm(t, rel))).collect();
+        jobs.into_iter().map(|j| j.join().unwrap_or_else(|_| Err("delete failed".into()))).collect::<Vec<_>>()
+    })
+    .into_iter()
+    .collect()
+}
+
+fn mv(t: &Target, from: &str, to: &str) -> Result<(), String> {
+    match t {
+        Target::Folder(base) => {
+            let dst = base.join(to);
+            fs::create_dir_all(dst.parent().unwrap()).map_err(|e| e.to_string())?;
+            fs::rename(base.join(from), &dst).map_err(|e| format!("{}: {e}", dst.display()))
+        }
+        Target::Rclone(base) => rclone(&["moveto", &format!("{base}/{from}"), &format!("{base}/{to}")]).map(|_| ()),
+    }
+}
+
+/// Move the sidecars of my pictures that older versions put next to the
+/// picture into .meta/. Returns how many were moved.
+pub fn move_old_sidecars() -> Result<usize, String> {
+    let t = target()?;
+    let (_, me) = me()?;
+    let old: Vec<String> = list(&t)?
+        .into_iter()
+        .filter(|rel| rel.ends_with(".tsv"))
+        .filter(|rel| parse_name(rel.rsplit('/').next().unwrap_or("")).is_some_and(|(_, p)| p == me))
+        .collect();
+    for rel in &old {
+        mv(&t, rel, &format!("{META}/{rel}"))?;
+    }
+    Ok(old.len())
 }
 
 pub fn unshare(file: &str) -> Result<(), String> {
@@ -362,11 +402,13 @@ pub fn team() -> Result<Vec<TeamRow>, String> {
     let cutoff = if days > 0 { (chrono::Local::now() - chrono::Duration::days(days)).format("%Y-%m-%d").to_string() } else { String::new() };
     let mut rows = Vec::new();
     for rel in list(&Target::Folder(dir.clone()))? {
-        let Some(stem) = rel.strip_suffix(".tsv") else { continue };
-        let img = dir.join(format!("{stem}.jpg"));
-        let Some(r) = store::tsv(&dir.join(&rel), 4).into_iter().next() else { continue };
+        let Some(stem) = rel.strip_suffix(".jpg") else { continue };
+        let img = dir.join(&rel);
+        // sidecar in .meta/, or next to the picture (older versions)
+        let side = [dir.join(side_rel(stem)), dir.join(format!("{stem}.tsv"))].into_iter().find(|p| p.is_file());
+        let Some(r) = side.and_then(|p| store::tsv(&p, 4).into_iter().next()) else { continue };
         let file = stem.rsplit('/').next().unwrap_or("");
-        if r[0] >= cutoff && img.is_file() {
+        if r[0] >= cutoff {
             rows.push(TeamRow {
                 date: r[0].clone(),
                 name: r[1].clone(),
