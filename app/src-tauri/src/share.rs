@@ -107,6 +107,21 @@ pub fn set_repo_choice(repo: &str, show: bool) -> Result<(), String> {
     fs::write(names_path(), rows.concat()).map_err(|e| e.to_string())
 }
 
+// Per-repo switches in the global git config, by repo name (so every clone
+// and worktree of a repo counts), also read by the command line tool:
+//   lolcommits.skipRepo   no photos in this repo
+//   lolcommits.neverShare photos stay on this computer, not in Review
+pub const SKIP: &str = "skipRepo";
+pub const NEVER: &str = "neverShare";
+
+pub fn photos_on(repo: &str) -> bool {
+    !config::listed(SKIP, repo)
+}
+
+pub fn may_share(repo: &str) -> bool {
+    !config::listed(NEVER, repo)
+}
+
 fn shows_repo(repo: &str) -> bool {
     repo_choice(repo).unwrap_or(false) // not asked (e.g. auto-share): hidden
 }
@@ -268,6 +283,9 @@ pub fn folder_for(shot: &Shot) -> String {
 pub fn upload(shot: &Shot) -> Result<(), String> {
     let t = target()?;
     let (name, me) = me()?;
+    if !may_share(&shot.repo) {
+        return Err(format!("sharing is off for {} (Settings › Repos)", shot.repo));
+    }
     if store::shared_rows().iter().any(|(l, _)| l == &shot.file) {
         return Err("already shared".into());
     }

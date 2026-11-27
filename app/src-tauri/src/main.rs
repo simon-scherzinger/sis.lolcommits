@@ -200,6 +200,10 @@ struct RepoChoice {
     /// true: shown by name, false: hidden (other-repos), null: not asked yet
     show: Option<bool>,
     folder: String,
+    /// photos are taken in this repo (lolcommits.skipRepo)
+    photos: bool,
+    /// photos may be shared, they show in Review (lolcommits.neverShare)
+    share: bool,
 }
 
 /// Every repo with photos, and whether it may appear by name in the team gallery.
@@ -207,6 +211,8 @@ struct RepoChoice {
 fn repo_choices() -> Vec<RepoChoice> {
     let mut repos: Vec<String> = store::shots().into_iter().map(|s| s.repo).collect();
     repos.extend(share::repo_choices().into_iter().map(|r| r.0));
+    repos.extend(config::get_all(share::SKIP));
+    repos.extend(config::get_all(share::NEVER));
     repos.sort_by_key(|r| r.to_lowercase());
     repos.dedup();
     repos
@@ -214,7 +220,7 @@ fn repo_choices() -> Vec<RepoChoice> {
         .map(|r| {
             let show = share::repo_choice(&r);
             let folder = if show == Some(true) { share::repo_folder(&r) } else { share::OTHER.to_string() };
-            RepoChoice { repo: r, show, folder }
+            RepoChoice { photos: share::photos_on(&r), share: share::may_share(&r), repo: r, show, folder }
         })
         .collect()
 }
@@ -224,6 +230,22 @@ fn repo_choices() -> Vec<RepoChoice> {
 #[tauri::command(async)]
 fn set_repo_choice(repo: String, show: bool) -> R<()> {
     share::set_repo_choice(&repo, show)
+}
+
+/// Settings › Repos: photos on/off, sharing on/off.
+#[tauri::command(async)]
+fn set_repo_option(app: AppHandle, repo: String, option: String, on: bool) -> R<()> {
+    if repo.is_empty() || repo.contains('\n') {
+        return Err("invalid repo".into());
+    }
+    let key = match option.as_str() {
+        "photos" => share::SKIP,
+        "share" => share::NEVER,
+        _ => return Err("unknown option".into()),
+    };
+    config::set_listed(key, &repo, !on)?;
+    tray::refresh(&app);
+    Ok(())
 }
 
 /// Review: swipe left keeps a picture on this computer and out of the review.
@@ -648,7 +670,7 @@ fn main() {
             test_shot, preview, share_shot, unshare, forget, team, wrapped, timelapse, drive_folders, use_folder,
             rclone_status, sign_in_outdated, brew_install, rclone_connect, rclone_cancel, rclone_use, forget_many, folders, set_folders, disconnect_sharing, finish_setup,
             set_autostart, first_name, install_cli, privacy_doc, set_private,
-            repo_choices, set_repo_choice, update_status, update_check, update_install
+            repo_choices, set_repo_choice, set_repo_option, update_status, update_check, update_install
         ])
         .setup(move |app| {
             #[cfg(target_os = "macos")]

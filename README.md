@@ -128,6 +128,7 @@ Everything is plain git config, shared by the app and the command line:
 | `lolcommits.dir` | `~/.lolcommits` | where pictures go |
 | `lolcommits.enabled` | `true` | `false` pauses without removing the hook |
 | `lolcommits.folders` | – (all) | photos only in repos below these folders, multi-valued (`--add`) |
+| `lolcommits.skipRepo` | – | repo names without photos, in every clone; multi-valued (`--add`), Settings › Repos › Photos |
 | `lolcommits.pausedUntil` | – | unix time, set by "Pause" in the menu bar |
 | `lolcommits.retention` | keep | delete local pictures after N days |
 | `lolcommits.share.target` | off | a folder (Drive for desktop, NAS) or `rclone:<remote>:<path>` |
@@ -135,6 +136,7 @@ Everything is plain git config, shared by the app and the command line:
 | `lolcommits.share.retention` | `0` (keep) | delete your shared pictures after N days |
 | `lolcommits.share.googleClientId` / `…Secret` | – | your team's Google OAuth client for "Sign in with Google" |
 | `lolcommits.share.auto` | `false` | upload every photo without review (repos not asked yet stay hidden) |
+| `lolcommits.neverShare` | – | repo names whose photos are never shared or reviewed; multi-valued (`--add`), Settings › Repos › Share |
 | `lolcommits.update.auto` | `true` | look for app updates on GitHub every few hours |
 | `lolcommits.remind` | `true` | once a day, from 10:00, a notification when photos wait in Review (app, with a team gallery) |
 

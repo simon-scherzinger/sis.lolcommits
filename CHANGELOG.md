@@ -18,6 +18,7 @@
 - **Review oldest first:** the Review stack starts with the oldest photo, so you go through them in the order they were taken. My shots still shows the newest first.
 - **Only pictures in the repo folders:** the small `.tsv` file with date, name and commit message that goes with each shared picture now sits in a hidden `.meta/` folder of the team gallery instead of next to the picture. The app moves the ones of your own pictures there on its next start. Pictures shared by older versions still show, and deleting removes the file in both places. Teammates need this version (app or command line tool) to see pictures shared with it.
 - **Reminder to review:** once a day, from 10:00, a notification says how many new photos are waiting in Review. Clicking it opens Review. Only with a team gallery set up, not while paused and not while the window is open. Turn it off in Settings › Team gallery › "Remind me to review". The first reminder asks macOS for permission to show notifications.
+- **Settings › Repos:** one row per repo with three switches. **Photos** off: no photos in this repo, in all its clones and worktrees (`lolcommits.skipRepo`). **Share** off: its photos stay on this computer and never show in Review (`lolcommits.neverShare`). **Name**: shown or hidden in the team gallery, as before. The command line tool and the commit hook follow the same settings.
 - **Only deleting is red:** confirmations like "Show name" or "Share every photo automatically" use the normal button.
 
 ## 0.5.3

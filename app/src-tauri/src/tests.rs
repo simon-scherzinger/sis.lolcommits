@@ -155,6 +155,26 @@ fn full_flow() {
     assert!(!target.join(".meta/repo").exists(), "my sidecars in .meta/ are gone too");
     assert!(store::shared_rows().is_empty());
 
+    // Settings › Repos › Share off: out of Review, can't be shared, back when turned on again
+    let before = store::to_review(&store::shots());
+    assert!(before > 0);
+    config::set_listed(share::NEVER, "repo", true).unwrap();
+    assert!(!share::may_share("repo") && share::may_share("other"));
+    assert_eq!(store::to_review(&store::shots()), 0);
+    assert!(share::upload(&b).unwrap_err().contains("sharing is off"));
+    config::set_listed(share::NEVER, "repo", false).unwrap();
+    assert_eq!(store::to_review(&store::shots()), before);
+
+    // Settings › Repos › Photos off: a list of repo names, other values untouched
+    config::set_listed(share::SKIP, "client.app", true).unwrap();
+    config::set_listed(share::SKIP, "repo", true).unwrap();
+    config::set_listed(share::SKIP, "repo", true).unwrap();
+    assert_eq!(config::get_all(share::SKIP), vec!["client.app", "repo"], "no duplicates");
+    assert!(!share::photos_on("repo") && !share::photos_on("client.app") && share::photos_on("client-app"));
+    config::set_listed(share::SKIP, "repo", false).unwrap();
+    assert_eq!(config::get_all(share::SKIP), vec!["client.app"]);
+    config::set_listed(share::SKIP, "client.app", false).unwrap();
+
     // review: swiping left keeps a picture private, undo brings it back
     store::set_private(&b.file, true).unwrap();
     assert!(store::find(&b.file).unwrap().private);

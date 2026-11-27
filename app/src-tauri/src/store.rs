@@ -75,9 +75,10 @@ pub fn set_private(file: &str, private: bool) -> std::io::Result<()> {
     write_lines(&private_path(), &rows)
 }
 
-/// Photos waiting in Review: neither shared nor kept private.
+/// Photos waiting in Review: neither shared nor kept private, from repos that may be shared.
 pub fn to_review(shots: &[Shot]) -> usize {
-    shots.iter().filter(|s| !s.shared && !s.private).count()
+    let never = config::get_all(crate::share::NEVER);
+    shots.iter().filter(|s| !s.shared && !s.private && !never.contains(&s.repo)).count()
 }
 
 pub fn shots() -> Vec<Shot> {

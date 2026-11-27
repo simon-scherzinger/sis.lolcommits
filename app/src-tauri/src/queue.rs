@@ -37,7 +37,7 @@ fn process(app: &AppHandle, job: &Path) {
         store::log(&format!("skipped stale job for {} {}", f[1], f[3]));
         return;
     }
-    if config::paused_until().is_some() {
+    if config::paused_until().is_some() || !share::photos_on(f[1]) {
         return;
     }
     let stem = job.file_stem().unwrap().to_string_lossy().to_string(); // YYYYmmdd-HHMMSS-sha
@@ -67,7 +67,7 @@ fn process(app: &AppHandle, job: &Path) {
     match res {
         Ok(shot) => {
             tray::set_error(app, None);
-            if config::get_or("share.auto", "false") == "true" && share::configured() {
+            if config::get_or("share.auto", "false") == "true" && share::configured() && share::may_share(repo) {
                 if let Err(e) = share::upload(&shot) {
                     store::log(&format!("auto-share failed for {repo} {sha}: {e}"));
                 }

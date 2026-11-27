@@ -166,6 +166,13 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
 .round.small{width:46px;height:46px;font-size:18px}
 .round.not{color:#ff4d5e}.round.hot{color:#21d36b}.round .i{width:28px;height:28px;stroke-width:2.5}.round.small .i{width:20px;height:20px}.round.hot .i{fill:currentColor}
 .repo-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.repo-grid{display:grid;grid-template-columns:minmax(0,1fr) repeat(var(--cols,1),auto);gap:8px 16px;align-items:center}
+.repo-grid .th{color:var(--mut);font-size:12px;font-weight:600;text-align:center}
+.repo-grid .th:first-child{text-align:left}
+.repo-grid .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.repo-grid .nm small{display:block;color:var(--mut);font-weight:400;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.repo-grid .switch{justify-self:center}
+.repo-hint{color:var(--mut);font-size:12px;margin-top:12px}
 .repo-row .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .repo-row .st{color:var(--mut);font-size:12px;min-width:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .review.asking .stack{--w:max(min(320px,92vw),min(600px,92vw,calc((100vh - 440px - var(--chrome)) * 16 / 9)))}
@@ -342,15 +349,18 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
       </div>
 
       <div class="card">
+        <h3>Repos</h3><p class="sub">Every repo with photos on this computer. A repo counts once, in all its clones and worktrees.</p>
+        <div id="repoList"></div>
+        <div class="hint repo-hint"><b>Photos</b> off: no photos in this repo, the ones already taken stay.<span class="if-team"> <b>Share</b> off: its photos stay on this computer and never show in Review. <b>Name</b> shown: pictures go to a folder named after the repo, label visible. Hidden: folder “other-repos”, repo and hash blurred – keep client work hidden. Applies to pictures shared from now on.</span></div>
+      </div>
+
+      <div class="card">
         <h3>Team gallery</h3><p class="sub" id="teamSub">Not set up. Pictures stay on this computer.</p>
         <div id="teamOff"><button class="btn primary" data-act="setup-team">Set up team gallery</button></div>
         <div id="teamOn" hidden>
           <div class="field"><label>Shared to</label><div class="row"><button class="btn" data-act="setup-team">Change…</button><button class="btn danger" id="disconnectBtn">Disconnect</button></div>
             <div class="hint" id="teamTarget"></div></div>
           <div class="field"><label for="s-name">Your name</label><input id="s-name" data-key="share.name" placeholder="a nickname is fine"></div>
-          <div class="field"><label>Repos shown by name</label><span></span>
-            <div class="hint">Shown: pictures go to a folder named after the repo, label visible. Hidden: folder “other-repos”, repo and hash blurred – keep client work hidden. Applies to pictures shared from now on.</div>
-            <div id="repoList" style="grid-column:1/-1"></div></div>
           <div class="field"><label for="s-auto">Share every photo automatically</label><input type="checkbox" class="switch" id="s-auto" data-key="share.auto">
             <div class="hint">Skips the preview – nobody checks the background or the commit message.</div></div>
           <div class="field"><label for="s-remind">Remind me to review</label><input type="checkbox" class="switch" id="s-remind">
@@ -764,7 +774,7 @@ function shotMenu(e, s, i) {
   if (SEL) return e.preventDefault();
   menu(e, [
     {label: "Open", run: () => openViewer("shots", i)},
-    s.shared ? {label: "Unshare", run: () => unshareOne(null, s)} : S.sharing ? {label: "Share…", run: () => shareFlow(s)} : null,
+    s.shared ? {label: "Unshare", run: () => unshareOne(null, s)} : S.sharing && mayShare(s.repo) ? {label: "Share…", run: () => shareFlow(s)} : null,
     {label: "Copy commit message", run: () => copyText(s.subject)},
     {label: "Show in Finder", run: () => reveal(s.file)},
     {label: "Select", run: () => { SEL = new Set([s.file]); selLast = i; renderSel(); }},
@@ -795,7 +805,7 @@ function fillViewer() {
   if (viewerKind === "shots") {
     $("#vMeta").textContent = [s.repo, s.branch, s.sha, fmtTs(s.ts)].join(" · ") + (s.shared ? " · shared" : "");
     if (s.shared) acts.push(h("button", {class: "btn", onclick: e => unshareOne(e.currentTarget, s)}, "Unshare"));
-    else if (S.sharing) acts.push(h("button", {class: "btn primary", onclick: () => shareFlow(s)}, "Share…"));
+    else if (S.sharing && mayShare(s.repo)) acts.push(h("button", {class: "btn primary", onclick: () => shareFlow(s)}, "Share…"));
     acts.push(h("button", {class: "btn danger", onclick: () => deleteOne(s)}, "Delete"));
   } else {
     $("#vMeta").textContent = [s.name, s.repo, fmtDate(s.date)].filter(Boolean).join(" · ");
@@ -824,6 +834,7 @@ function refreshViewer(file) {
 
 // ------------------------------------------------------------------ actions
 const repoChoice = repo => (S.repos.find(r => r.repo === repo) || {}).show;   // true / false / null
+const mayShare = repo => (S.repos.find(r => r.repo === repo) || {}).share !== false;  // Settings › Repos › Share
 async function askRepo(repo) {
   const r = await confirmDlg({title: "Show “" + repo + "” by name?", go: "Show name", safe: true,
     text: "Your team would see the repo name, and the picture goes to the folder “" + repo + "”. Choose “Cancel” to keep it hidden: folder “other-repos”, name blurred. Asked once per repo, changeable in Settings."});
@@ -974,12 +985,7 @@ function renderSettings() {
   $("#teamOff").hidden = S.sharing; $("#teamOn").hidden = !S.sharing;
   $("#teamSub").textContent = S.sharing ? "Shared as “" + cfg("share.name") + "”." : "Not set up. Pictures stay on this computer.";
   $("#teamTarget").textContent = S.shareLabel;
-  $("#repoList").replaceChildren(...(S.repos || []).map(r => h("div", {class: "repo-row"},
-    h("span", {class: "nm", title: r.repo}, r.repo),
-    h("span", {class: "st", title: r.show ? r.folder : ""}, r.show == null ? "not asked yet" : r.show ? "→ " + r.folder : "→ other-repos"),
-    h("input", {type: "checkbox", class: "switch", checked: !!r.show, "aria-label": "Show " + r.repo + " by name",
-      onchange: e => busy(e.target, async () => { await api("set_repo_choice", {repo: r.repo, show: e.target.checked}); toast("Saved ✓"); PREV.clear(); rSig = ""; await load(); })}))));
-  if (!(S.repos || []).length) $("#repoList").replaceChildren(h("span", {class: "count"}, "No repos yet."));
+  renderRepos();
   for (const el of $$("[data-key]")) {
     if (document.activeElement === el) continue;
     const v = cfg(el.dataset.key);
@@ -987,6 +993,26 @@ function renderSettings() {
   }
   const dev = $("#s-device");
   if (!devicesLoaded && cfg("device")) { dev.replaceChildren(h("option", {value: cfg("device")}, cfg("device"))); dev.value = cfg("device"); }
+}
+// Settings › Repos: photos on/off, sharing on/off, name shown/hidden – one row per repo
+function renderRepos() {
+  const repos = S.repos || [], team = S.sharing;
+  $$(".if-team").forEach(e => e.hidden = !team);
+  if (!repos.length) { $("#repoList").replaceChildren(h("span", {class: "count"}, "No repos yet.")); return; }
+  const saved = async (e, call) => busy(e.target, async () => { await call(); toast("Saved ✓"); PREV.clear(); rSig = ""; await load(); });
+  const option = (r, opt, label) => h("input", {type: "checkbox", class: "switch", checked: r[opt], "aria-label": label + " " + r.repo,
+    onchange: e => saved(e, () => api("set_repo_option", {repo: r.repo, option: opt, on: e.target.checked}))});
+  const where = r => !r.photos ? "no photos" : !r.share ? "stays on this computer" : r.show == null ? "name not asked yet" : r.show ? "→ " + r.folder : "→ other-repos";
+  const grid = h("div", {class: "repo-grid", style: "--cols:" + (team ? 3 : 1)},
+    h("span", {class: "th"}, "Repo"), h("span", {class: "th"}, "Photos"), team && h("span", {class: "th"}, "Share"), team && h("span", {class: "th"}, "Name"),
+    repos.map(r => [
+      h("span", {class: "nm", title: r.repo}, r.repo, team && h("small", null, where(r))),
+      option(r, "photos", "Photos in"),
+      team && option(r, "share", "Share from"),
+      team && h("input", {type: "checkbox", class: "switch", checked: !!r.show, disabled: !r.share, "aria-label": "Show " + r.repo + " by name",
+        onchange: e => saved(e, () => api("set_repo_choice", {repo: r.repo, show: e.target.checked}))}),
+    ]));
+  $("#repoList").replaceChildren(grid);
 }
 async function renderFolders() {
   const f = await api("folders").catch(() => []);
@@ -1098,7 +1124,7 @@ const PENDING = new Set();
 let upChain = Promise.resolve();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 // oldest first, so you review in the order the photos were taken (S.shots is newest first)
-const reviewQueue = () => S.shots.filter(s => !s.shared && !s.private && !PENDING.has(s.file)).reverse();
+const reviewQueue = () => S.shots.filter(s => !s.shared && !s.private && mayShare(s.repo) && !PENDING.has(s.file)).reverse();
 const PREV = new Map();           // file → preview path (exactly what gets uploaded)
 let RHIST = [], rBusy = false, rSig = "";
 const consented = () => { try { return localStorage.getItem("lolReviewConsent") === "1"; } catch { return false; } };

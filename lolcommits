@@ -14,6 +14,8 @@ OS="$(uname -s)"
 die()  { printf 'lolcommits: %s\n' "$*" >&2; exit 1; }
 info() { printf '%s\n' "$*"; }
 cfg()  { git config --get "lolcommits.$1" 2>/dev/null || printf '%s' "${2:-}"; }
+# listed <key> <value> – is value one of the values of the multi-valued lolcommits.<key>?
+listed() { git config --get-all "lolcommits.$1" 2>/dev/null | grep -qxF -- "$2"; }
 need() { command -v "$1" >/dev/null 2>&1 || die "$1 not found – install it first (macOS: brew install $1, Linux: apt/dnf install $1)"; }
 open_file() {
   [ -n "${LOLCOMMITS_NO_OPEN:-}" ] && return 0
@@ -51,6 +53,7 @@ Config (git config [--global] lolcommits.<key> <value>):
   font      path to a .ttf (default: Impact, else DejaVu Sans Bold)
   dir       where pictures go (default ~/.lolcommits)
   enabled   set to false to pause in one repo without touching hooks
+  skipRepo  repo name with no photos, in every clone (several: git config --global --add)
   pausedUntil  unix time until which no photos are taken (set by the app)
   retention delete local pictures after N days (default: keep)
 
@@ -60,6 +63,7 @@ Config (git config [--global] lolcommits.<key> <value>):
   (repo names: asked once per repo on the first share, stored in ~/.lolcommits/repo-names.tsv)
   share.retention  delete your shared pictures after N days (default 0 = keep)
   share.auto       true uploads every shot without preview (default false)
+  neverShare       repo name whose photos are never shared (several: git config --global --add)
 
 Skip a single commit with LOLCOMMITS_SKIP=1 git commit ...
 EOF
@@ -264,6 +268,7 @@ cmd_capture() {
   sha="$(git rev-parse --short=10 HEAD)"
   subject="$(git log -1 --format=%s)"
   repo="$(repo_name)"
+  listed skipRepo "$repo" && return 0
   branch="$(git branch --show-current 2>/dev/null)"; branch="${branch:-detached}"
 
   # with lolcommits.app installed the app takes the photo: one camera permission,
@@ -290,7 +295,7 @@ cmd_capture() {
       printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$repo" "$branch" "$sha" "$subject" "$out" >>"$INDEX"
       prune_local
       # auto-share only when explicitly switched on (git config lolcommits.share.auto true)
-      if [ "$(cfg share.auto false)" = true ] && [ "$(share_mode)" != off ] && [ -n "$(cfg share.name)" ]; then
+      if [ "$(cfg share.auto false)" = true ] && [ "$(share_mode)" != off ] && [ -n "$(cfg share.name)" ] && ! listed neverShare "$repo"; then
         local img; img="$(mktemp -d)/share.jpg"
         { share_prepare "$out" "$img" "$repo" && share_upload "$img" "$out" "$repo" "$subject"; } \
           || printf '%s auto-share failed for %s %s\n' "$now" "$repo" "$sha" >>"$LOG"
@@ -573,6 +578,7 @@ cmd_share() {
   [ -n "$row" ] || die "not a lolcommit: $f"
   [ -f "$SHARED" ] && cut -f1 "$SHARED" | grep -qxF "$f" && die "already shared: $f"
   local repo; repo="$(cut -f2 <<<"$row")"
+  listed neverShare "$repo" && die "sharing is off for $repo (to allow it: git config --global --unset --fixed-value lolcommits.neverShare \"$repo\")"
   if [ -z "$(repo_choice "$repo")" ] && [ -z "$yes" ]; then
     # asked once per repo: client projects should stay anonymous
     printf 'May your team see the repo name "%s"? (folder "%s" instead of "%s") [y/N] ' "$repo" "$(repo_folder "$repo")" "$OTHER_REPOS"

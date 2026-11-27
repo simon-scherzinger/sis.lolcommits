@@ -135,6 +135,20 @@ pub fn get_all(key: &str) -> Vec<String> {
     entries().into_iter().filter(|(k, v)| k.to_lowercase() == key && !v.is_empty()).map(|(_, v)| v).collect()
 }
 
+/// Is `value` one of the values of a multi-valued key?
+pub fn listed(key: &str, value: &str) -> bool {
+    get_all(key).iter().any(|v| v == value)
+}
+
+/// Add `value` to a multi-valued key (on) or remove it (off).
+pub fn set_listed(key: &str, value: &str, on: bool) -> Result<(), String> {
+    let mut all: Vec<String> = get_all(key).into_iter().filter(|v| v != value).collect();
+    if on {
+        all.push(value.to_string());
+    }
+    set_all(key, &all)
+}
+
 /// Replace all values of a multi-valued key.
 pub fn set_all(key: &str, values: &[String]) -> Result<(), String> {
     let k = format!("lolcommits.{key}");
