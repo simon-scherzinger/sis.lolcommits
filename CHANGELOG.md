@@ -15,6 +15,7 @@
 - **Team gallery opens at once:** it shows the pictures already on this computer right away and syncs with Google Drive in the background (the Refresh button spins meanwhile). Opening the tab again within a minute doesn't sync again; Refresh always does.
 - **Review intro tells the truth:** it no longer says the repo name is always blurred. Repos you show by name aren't blurred.
 - **Team gallery problem banner** has a "Change team gallery…" button, so you can switch to a target the app can use (an ssh target set up from the command line only works there).
+- **Review oldest first:** the Review stack starts with the oldest photo, so you go through them in the order they were taken. My shots still shows the newest first.
 - **Only deleting is red:** confirmations like "Show name" or "Share every photo automatically" use the normal button.
 
 ## 0.5.3

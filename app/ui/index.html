@@ -1093,7 +1093,8 @@ document.addEventListener("click", e => {
 const PENDING = new Set();
 let upChain = Promise.resolve();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const reviewQueue = () => S.shots.filter(s => !s.shared && !s.private && !PENDING.has(s.file));
+// oldest first, so you review in the order the photos were taken (S.shots is newest first)
+const reviewQueue = () => S.shots.filter(s => !s.shared && !s.private && !PENDING.has(s.file)).reverse();
 const PREV = new Map();           // file → preview path (exactly what gets uploaded)
 let RHIST = [], rBusy = false, rSig = "";
 const consented = () => { try { return localStorage.getItem("lolReviewConsent") === "1"; } catch { return false; } };
