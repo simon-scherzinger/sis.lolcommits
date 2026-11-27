@@ -283,7 +283,7 @@ fn set_private(app: AppHandle, file: String, private: bool) -> R<()> {
 
 #[tauri::command(async)]
 fn share_shot(app: AppHandle, file: String) -> R<()> {
-    let r = share::upload(&known(&file)?);
+    let r = share::upload(&known(&file)?, true);
     if r.is_ok() {
         let _ = store::set_private(&file, false);
     }
@@ -719,14 +719,15 @@ fn main() {
             let h = handle.clone();
             remind::start(handle.clone(), move || show_main(&h, Some("review")));
             if share::configured() {
+                // team settings first: the Review needs them, the sidecar move can take a while
                 std::thread::spawn(|| {
+                    if let Err(e) = team::refresh().and_then(|_| team::publish_local_choices()) {
+                        store::log(&format!("team settings: {e}"));
+                    }
                     match share::move_old_sidecars() {
                         Ok(0) => {}
                         Ok(n) => store::log(&format!("moved {n} sidecars into .meta/")),
                         Err(e) => store::log(&format!("moving sidecars into .meta/ failed: {e}")),
-                    }
-                    if let Err(e) = team::refresh().and_then(|_| team::publish_local_choices()) {
-                        store::log(&format!("team settings: {e}"));
                     }
                 });
             }

@@ -867,7 +867,9 @@ async function shareFlow(s) {
   $("#shareInfo").textContent = "This is exactly what goes to " + S.shareLabel + " as “" + cfg("share.name") + "”"
     + (repoChoice(s.repo) ? " in the folder “" + s.repo + "”, without metadata." : " in “other-repos” – repo name blurred, no metadata.");
   $("#shareGo").onclick = () => busy($("#shareGo"), async () => {
-    await api("share_shot", {file: s.file}); dlg.close(); toast("Shared ✓"); await load(); refreshViewer(s.file);
+    try { await api("share_shot", {file: s.file}); }
+    catch (e) { dlg.close(); S.repos = await api("repo_choices").catch(() => S.repos); throw e; }   // reopen: fresh preview
+    dlg.close(); toast("Shared ✓"); await load(); refreshViewer(s.file);
   });
   dlg.showModal();
   await busy(null, async () => {
@@ -1261,7 +1263,10 @@ async function decide(hot) {
       PENDING.add(file);
       const job = upChain = upChain.then(() => api("share_shot", {file}))
         .then(() => { const s = S.shots.find(x => x.file === file); if (s) s.shared = true; toast("Shared with your team ✓"); })
-        .catch(e => { RHIST = RHIST.filter(x => x.file !== file); toast("Not shared – “" + (shot ? shot.subject : file) + "”: " + e, true); })
+        .catch(async e => {
+          RHIST = RHIST.filter(x => x.file !== file); toast("Not shared – “" + (shot ? shot.subject : file) + "”: " + e, true);
+          PREV.delete(file); S.repos = await api("repo_choices").catch(() => S.repos);   // e.g. the team changed the repo name setting
+        })
         .finally(() => { PENDING.delete(file); rSig = ""; renderReview(); drawShots(); renderPrivacy(); });
       RHIST.push({file, hot, job});
       await sleep(260);

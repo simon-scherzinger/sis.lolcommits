@@ -63,8 +63,8 @@ fn full_flow() {
 
     // repo not asked yet → other-repos, repo label blurred, repo hidden in the sidecar
     assert_eq!(share::repo_choice("repo"), None);
-    share::upload(&a).unwrap();
-    assert!(share::upload(&a).is_err(), "no double share");
+    share::upload(&a, false).unwrap();
+    assert!(share::upload(&a, false).is_err(), "no double share");
     let other: Vec<_> = fs::read_dir(target.join("other-repos")).unwrap().flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect();
     assert_eq!(other.len(), 1, "only the picture, the sidecar is in .meta/: {other:?}");
     assert!(other[0].starts_with("20261125-juergen-gross-") && other[0].ends_with(".jpg"), "{other:?}");
@@ -74,7 +74,7 @@ fn full_flow() {
 
     // repo allowed by name → its own folder, not blurred
     share::set_repo_choice("repo", true).unwrap();
-    share::upload(&b).unwrap();
+    share::upload(&b, false).unwrap();
     let in_repo = fs::read_dir(target.join("repo")).unwrap().count();
     assert_eq!(in_repo, 1);
     assert_eq!(fs::read_dir(target.join(".meta/repo")).unwrap().count(), 1);
@@ -112,13 +112,13 @@ fn full_flow() {
     fs::write(target.join("repo/20200101-juergen-gross-00000001.jpg"), b"x").unwrap();
     fs::write(target.join("repo/20200101-juergen-gross-00000001.tsv"), "2020-01-01\tJürgen Groß\trepo\told\n").unwrap();
     let c = shoot("third", "20261125-100200-abc1234567");
-    share::upload(&c).unwrap();
+    share::upload(&c, false).unwrap();
     assert!(target.join("repo/20200101-juergen-gross-00000001.jpg").exists(), "default must not expire shared pictures");
 
     // with an expiry set it is removed (only mine)
     config::set("share.retention", "30").unwrap();
     let d = shoot("fourth", "20261125-100300-abc1234567");
-    share::upload(&d).unwrap();
+    share::upload(&d, false).unwrap();
     assert!(!target.join("repo/20200101-juergen-gross-00000001.jpg").exists());
     assert!(!target.join("repo/20200101-juergen-gross-00000001.tsv").exists(), "old-style sidecar goes too");
     assert!(!target.join("repo/20201231-juergen-gross-00000002.jpg").exists());
@@ -161,7 +161,7 @@ fn full_flow() {
     config::set_listed(share::NEVER, "repo", true).unwrap();
     assert!(!share::may_share("repo") && share::may_share("other"));
     assert_eq!(store::to_review(&store::shots()), 0);
-    assert!(share::upload(&b).unwrap_err().contains("sharing is off"));
+    assert!(share::upload(&b, false).unwrap_err().contains("sharing is off"));
     config::set_listed(share::NEVER, "repo", false).unwrap();
     assert_eq!(store::to_review(&store::shots()), before);
 
@@ -190,6 +190,15 @@ fn full_flow() {
     assert_eq!(share::repo_choice("acme-shop"), Some(false));
     assert!(share::answer_repo_choice("new-repo", true).unwrap());
     assert_eq!(team::fresh_repo_choice("new-repo").unwrap(), Some(true));
+    // a Drive conflict copy from two answers at once: hide wins
+    let new_file = fs::read_dir(target.join(".meta/repos")).unwrap().flatten()
+        .find(|e| fs::read_to_string(e.path()).unwrap() == "show\tnew-repo\n").unwrap().path();
+    let copy = new_file.with_file_name(format!("{} (1)", new_file.file_name().unwrap().to_string_lossy()));
+    fs::write(&copy, "hide\n").unwrap();
+    assert_eq!(share::repo_choice("new-repo"), Some(false));
+    share::set_repo_choice("new-repo", true).unwrap();
+    assert!(!copy.exists(), "a deliberate choice clears conflict copies");
+    assert_eq!(share::repo_choice("new-repo"), Some(true));
     // changing it in Settings changes it for everyone
     share::set_repo_choice("new-repo", false).unwrap();
     assert_eq!(team::fresh_repo_choice("new-repo").unwrap(), Some(false));
@@ -209,7 +218,7 @@ fn full_flow() {
     // the team's choice wins over this computer's, also for the upload
     assert_eq!(share::repo_choice("repo"), Some(false));
     let e = shoot("team hides it", "20261125-100500-abc1234567");
-    share::upload(&e).unwrap();
+    share::upload(&e, false).unwrap();
     assert!(store::shared_rows().iter().any(|(l, r)| l == &e.file && r.starts_with("other-repos/")), "{:?}", store::shared_rows());
     share::unshare(&e.file).unwrap();
     share::set_repo_choice("repo", true).unwrap();

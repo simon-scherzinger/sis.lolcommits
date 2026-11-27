@@ -68,7 +68,7 @@ fn process(app: &AppHandle, job: &Path) {
         Ok(shot) => {
             tray::set_error(app, None);
             if config::get_or("share.auto", "false") == "true" && share::configured() && share::may_share(repo) {
-                if let Err(e) = share::upload(&shot) {
+                if let Err(e) = share::upload(&shot, false) {
                     store::log(&format!("auto-share failed for {repo} {sha}: {e}"));
                 }
             }

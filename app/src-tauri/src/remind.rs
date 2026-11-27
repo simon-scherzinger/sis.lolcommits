@@ -3,12 +3,15 @@
 //! while paused, not while the window is open, not before REMIND_FROM o'clock.
 //! Off with `git config --global lolcommits.remind false`.
 use crate::{config, share, store, time};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 use std::time::Duration;
 use tauri::{AppHandle, Manager};
 
 const REMIND_FROM: u32 = 10;
 static ON_CLICK: OnceLock<Box<dyn Fn() + Send + Sync>> = OnceLock::new();
+/// A reminder is waiting for macOS (e.g. the permission question is open).
+static WAITING: AtomicBool = AtomicBool::new(false);
 
 pub fn enabled() -> bool {
     config::get_or("remind", "true") != "false"
@@ -27,11 +30,16 @@ pub fn start(app: AppHandle, on_click: impl Fn() + Send + Sync + 'static) {
     std::thread::spawn(move || loop {
         std::thread::sleep(Duration::from_secs(300));
         let window_open = app.get_webview_window("main").and_then(|w| w.is_visible().ok()).unwrap_or(false);
+        if WAITING.load(Ordering::SeqCst) {
+            continue;
+        }
         if let Some(n) = due(window_open) {
-            let today = time::today().to_string();
-            if std::fs::write(last_path(), &today).is_ok() {
-                platform::notify(&if n == 1 { "1 new photo to review".to_string() } else { format!("{n} new photos to review") });
-            }
+            WAITING.store(true, Ordering::SeqCst);
+            // done for today once macOS has it, or once notifications are turned off
+            platform::notify(&if n == 1 { "1 new photo to review".to_string() } else { format!("{n} new photos to review") }, || {
+                let _ = std::fs::write(last_path(), time::today().to_string());
+                WAITING.store(false, Ordering::SeqCst);
+            });
         }
     });
 }
@@ -100,15 +108,18 @@ mod platform {
         std::mem::forget(delegate); // the center holds it weakly; it lives as long as the app
     }
 
-    pub fn notify(body: &str) {
+    pub fn notify(body: &str, done: impl Fn() + 'static) {
         if !bundled() {
             store::log(&format!("reminder (no app bundle, not shown): {body}"));
+            done();
             return;
         }
         let body = body.to_string();
-        // asks for permission the first time; later calls return the person's choice at once
+        // asks for permission the first time (the answer may take a while);
+        // later calls return the person's choice at once
         let then = RcBlock::new(move |granted: Bool, _err: *mut NSError| {
             if !granted.as_bool() {
+                done();
                 return;
             }
             let content = UNMutableNotificationContent::new();
@@ -117,6 +128,7 @@ mod platform {
             // same identifier: a new reminder replaces yesterday's in the Notification Center
             let req = UNNotificationRequest::requestWithIdentifier_content_trigger(&NSString::from_str("review"), &content, None);
             UNUserNotificationCenter::currentNotificationCenter().addNotificationRequest_withCompletionHandler(&req, None);
+            done();
         });
         UNUserNotificationCenter::currentNotificationCenter()
             .requestAuthorizationWithOptions_completionHandler(UNAuthorizationOptions::Alert | UNAuthorizationOptions::Sound, &then);
@@ -126,7 +138,8 @@ mod platform {
 #[cfg(not(target_os = "macos"))]
 mod platform {
     pub fn init() {}
-    pub fn notify(body: &str) {
+    pub fn notify(body: &str, done: impl Fn() + 'static) {
         crate::store::log(&format!("reminder (notifications are macOS only): {body}"));
+        done();
     }
 }

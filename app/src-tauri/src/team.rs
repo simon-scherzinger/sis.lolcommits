@@ -33,7 +33,8 @@ fn read_local(rel: &str) -> Option<String> {
     fs::read_to_string(local(rel)?).ok()
 }
 
-/// Straight from the drive. Ok(None): there is no such file.
+/// Straight from the drive (rclone; a folder is read directly anyway).
+/// Ok(None): there is no such file.
 fn read_fresh(rel: &str) -> Result<Option<String>, String> {
     match share::target()? {
         Target::Folder(_) => Ok(read_local(rel)),
@@ -92,19 +93,45 @@ fn parse_choice(s: &str) -> Option<bool> {
     }
 }
 
-/// The team's choice for a repo as known on this computer.
+/// The team's choice for a repo as known on this computer. Two people
+/// answering at once can leave a Drive conflict copy ("<hash> (1)") next to
+/// the file: then hide wins.
 pub fn repo_choice(repo: &str) -> Option<bool> {
-    read_local(&repo_rel(repo)).as_deref().and_then(parse_choice)
+    let dir = local(&format!("{META}/repos"))?;
+    let h = hash(repo);
+    let choices: Vec<bool> = fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .filter(|e| e.file_name().to_string_lossy().starts_with(&h))
+        .filter_map(|e| fs::read_to_string(e.path()).ok().as_deref().and_then(parse_choice))
+        .collect();
+    if choices.is_empty() { None } else { Some(choices.iter().all(|c| *c)) }
 }
 
 /// The team's choice straight from the drive.
 pub fn fresh_repo_choice(repo: &str) -> Result<Option<bool>, String> {
-    Ok(read_fresh(&repo_rel(repo))?.as_deref().and_then(parse_choice))
+    match share::target()? {
+        Target::Folder(_) => Ok(repo_choice(repo)),
+        Target::Rclone(_) => Ok(read_fresh(&repo_rel(repo))?.as_deref().and_then(parse_choice)),
+    }
 }
 
 pub fn set_repo_choice(repo: &str, show: bool) -> Result<(), String> {
     let content = if show { format!("show\t{}\n", repo.replace(['\t', '\n'], " ")) } else { "hide\n".into() };
-    write(&repo_rel(repo), Some(&content))
+    write(&repo_rel(repo), Some(&content))?;
+    // a deliberate choice replaces conflict copies ("<hash> (1)"), which would otherwise keep winning
+    if let Ok(Target::Folder(_)) = share::target() {
+        let h = hash(repo);
+        if let Some(dir) = local(&format!("{META}/repos")) {
+            for e in fs::read_dir(dir).into_iter().flatten().flatten() {
+                let name = e.file_name().to_string_lossy().to_string();
+                if name.starts_with(&h) && name != h {
+                    let _ = fs::remove_file(e.path());
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Team maximum for keeping shared pictures, in days.

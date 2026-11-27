@@ -331,7 +331,10 @@ fn show_for_upload(repo: &str) -> Result<bool, String> {
     }
 }
 
-pub fn upload(shot: &Shot) -> Result<(), String> {
+/// `previewed`: the person saw the preview (made with repo_choice()); if the
+/// team's choice changed meanwhile, nothing goes out and the preview must be
+/// looked at again. False for auto-share, which has no preview.
+pub fn upload(shot: &Shot, previewed: bool) -> Result<(), String> {
     let t = target()?;
     let (name, me) = me()?;
     if !may_share(&shot.repo) {
@@ -340,7 +343,15 @@ pub fn upload(shot: &Shot) -> Result<(), String> {
     if store::shared_rows().iter().any(|(l, _)| l == &shot.file) {
         return Err("already shared".into());
     }
+    let seen = shows_repo(&shot.repo);
     let show = show_for_upload(&shot.repo)?;
+    if previewed && show != seen {
+        return Err(format!(
+            "your team now {} “{}” by name – not shared, check the new preview",
+            if show { "shows" } else { "hides" },
+            shot.repo
+        ));
+    }
     let img = prepare_as(shot, show)?;
     let base = Path::new(&shot.file).file_name().unwrap().to_string_lossy().to_string();
     let d = base.get(..8).filter(|d| d.chars().all(|c| c.is_ascii_digit())).unwrap_or("00000000").to_string();
@@ -388,16 +399,34 @@ fn prune() {
     }
 }
 
-/// Picture and sidecar (in .meta/ and, from older versions, next to the
-/// picture) at once: on Drive each delete is a round trip.
+/// Picture and sidecar at once: on Drive each delete is a round trip.
 fn rm_pair(t: &Target, stem: &str) -> Result<(), String> {
-    let rels = [format!("{stem}.jpg"), side_rel(stem), format!("{stem}.tsv")];
-    std::thread::scope(|s| {
-        let jobs: Vec<_> = rels.iter().map(|rel| s.spawn(move || rm(t, rel))).collect();
-        jobs.into_iter().map(|j| j.join().unwrap_or_else(|_| Err("delete failed".into()))).collect::<Vec<_>>()
-    })
-    .into_iter()
-    .collect()
+    let (jpg, tsv) = std::thread::scope(|s| {
+        let tsv = s.spawn(|| rm(t, &side_rel(stem)));
+        let old = s.spawn(|| rm_old_sidecar(t, stem));
+        let jpg = rm(t, &format!("{stem}.jpg"));
+        let _ = old.join();
+        (jpg, tsv.join().unwrap_or_else(|_| Err("delete failed".into())))
+    });
+    jpg.and(tsv)
+}
+
+/// The sidecar older versions put next to the picture, if it is still there.
+/// Best effort: start-up moves my own into .meta/. On rclone a filtered delete
+/// succeeds without a match, so a missing file costs one call, not three.
+fn rm_old_sidecar(t: &Target, stem: &str) {
+    match t {
+        Target::Folder(_) => {
+            let _ = rm(t, &format!("{stem}.tsv"));
+        }
+        Target::Rclone(base) => {
+            let (folder, name) = stem.rsplit_once('/').unwrap_or(("", stem));
+            let (dir, only) = (format!("{base}/{folder}"), format!("/{name}.tsv"));
+            if rclone(&["delete", &dir, "--include", &only]).is_err() {
+                let _ = rclone(&["delete", "--drive-use-trash=true", &dir, "--include", &only]);
+            }
+        }
+    }
 }
 
 fn mv(t: &Target, from: &str, to: &str) -> Result<(), String> {
@@ -421,10 +450,22 @@ pub fn move_old_sidecars() -> Result<usize, String> {
         .filter(|rel| rel.ends_with(".tsv"))
         .filter(|rel| parse_name(rel.rsplit('/').next().unwrap_or("")).is_some_and(|(_, p)| p == me))
         .collect();
+    let mut moved = 0;
+    let mut failed = None;
     for rel in &old {
-        mv(&t, rel, &format!("{META}/{rel}"))?;
+        match mv(&t, rel, &format!("{META}/{rel}")) {
+            Ok(()) => moved += 1,
+            Err(e) => failed = Some(format!("{rel}: {e}")),
+        }
     }
-    Ok(old.len())
+    match failed {
+        Some(e) if moved == 0 => Err(e),
+        Some(e) => {
+            store::log(&format!("moving a sidecar into .meta/ failed: {e}"));
+            Ok(moved)
+        }
+        None => Ok(moved),
+    }
 }
 
 pub fn unshare(file: &str) -> Result<(), String> {

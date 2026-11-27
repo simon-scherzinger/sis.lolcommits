@@ -60,7 +60,7 @@ Files are named `<date>-<person>-<random>`, so several people can share into the
 Shared pictures stay until you take them back, unless you set an expiry in Settings. The team can also set a limit there ("Team: shared pictures stay at most"): nobody keeps them longer, anyone may remove theirs earlier.
 
 **Team settings** live in the hidden `.meta/` folder of the team gallery, one small file each, so two people changing something at once don't create Drive conflict copies:
-- `.meta/repos/<sha256 of the repo name>`: `show<TAB><name>` or `hide`. A hidden repo appears only as a hash.
+- `.meta/repos/<sha256 of the repo name>`: `show<TAB><name>` or `hide`. A hidden repo appears only as a hash. That keeps the name out of sight, but someone with access to the drive who guesses a name can check it against the hashes. If two people answer at the same time and Drive keeps both files, "hide" wins.
 - `.meta/retention`: the team's limit in days.
 Your team should agree on a period, see [PRIVACY.md](PRIVACY.md).
 
