@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
 
 - **Fits small windows:** the top bar stays on one line down to the smallest window size, long repo and branch names are shortened with "…" instead of breaking the date over three lines, and in Review the swipe buttons stay on screen even with a banner showing. The photo viewer keeps its info bar visible for long commit messages.
 - **Loading placeholders:** pictures, the team gallery and the share preview shimmer while they load, instead of empty grey boxes or a flash of "nothing here yet".
