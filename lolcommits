@@ -503,7 +503,7 @@ team_set_choice() {
 }
 # The team's choice wins; this computer's answers (~/.lolcommits/repo-names.tsv)
 # count until the team has one. Callers read team_choice once and pass it on.
-local_choice() { [ -f "$REPO_NAMES" ] && awk -F'\t' -v r="$1" '$1==r{v=$2} END{printf "%s", v}' "$REPO_NAMES"; }
+local_choice() { [ ! -f "$REPO_NAMES" ] || awk -F'\t' -v r="$1" '$1==r{v=$2} END{printf "%s", v}' "$REPO_NAMES"; }
 # answer_repo_choice <repo> <show|hide> – the first answer becomes the team's; if the team
 # has decided meanwhile, its choice stays. Prints the choice in effect.
 answer_repo_choice() {
@@ -553,7 +553,19 @@ share_rm() {
   esac
 }
 # share_rm_side <folder>/<stem> – the sidecar in .meta/ and the one older versions put next to the picture
-share_rm_side() { share_rm "$META/$1.tsv"; share_rm "$1.tsv"; }
+share_rm_side() { share_rm "$META/$1.tsv"; share_rm_old_side "$1"; }
+# Best effort. On rclone a filtered delete succeeds without a match, so a
+# missing file costs one call, not three (same as the app).
+share_rm_old_side() {
+  if [ "$(share_mode)" = rclone ]; then
+    local b dir name; b="$(share_base)"; dir="$b/$(dirname "$1")"; name="${1##*/}"
+    rclone delete "${RCLONE_FLAGS[@]}" "$dir" --include "/$name.tsv" 2>/dev/null ||
+      rclone delete --drive-use-trash=true "$dir" --include "/$name.tsv" 2>/dev/null
+    true
+  else
+    share_rm "$1.tsv"
+  fi
+}
 # all pictures in the target as <folder>/<file>.jpg
 share_ls() {
   local b; b="$(share_base)"

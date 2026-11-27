@@ -304,7 +304,7 @@ nav a .n{display:inline-block;min-width:18px;padding:0 5px;margin-left:5px;borde
     <div class="empty" id="reviewDone" hidden>
       <h2 class="impact">all caught up</h2>
       <div>New photos show up here after your next commits.</div>
-      <div class="btns"><button class="btn" id="rUndo2"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Undo last swipe</button><button class="btn" onclick="route('team')">See the team gallery</button></div>
+      <div class="btns"><button class="btn" id="rUndo2"><svg class="i" aria-hidden="true"><use href="#i-undo"/></svg>Undo last swipe</button><button class="btn" data-act="go-team">See the team gallery</button></div>
     </div>
   </section>
 
@@ -868,7 +868,7 @@ async function shareFlow(s) {
     + (repoChoice(s.repo) ? " in the folder “" + s.repo + "”, without metadata." : " in “other-repos” – repo name blurred, no metadata.");
   $("#shareGo").onclick = () => busy($("#shareGo"), async () => {
     try { await api("share_shot", {file: s.file}); }
-    catch (e) { dlg.close(); S.repos = await api("repo_choices").catch(() => S.repos); throw e; }   // reopen: fresh preview
+    catch (e) { dlg.close(); PREV.delete(s.file); S.repos = await api("repo_choices").catch(() => S.repos); throw e; }   // Share again shows a fresh preview
     dlg.close(); toast("Shared ✓"); await load(); refreshViewer(s.file);
   });
   dlg.showModal();
@@ -1016,11 +1016,18 @@ function renderSettings() {
   if (!devicesLoaded && cfg("device")) { dev.replaceChildren(h("option", {value: cfg("device")}, cfg("device"))); dev.value = cfg("device"); }
 }
 // Settings › Repos: photos on/off, sharing on/off, name shown/hidden – one row per repo
+const focusRepo = label => label && $("#repoList").querySelector('[aria-label="' + CSS.escape(label) + '"]')?.focus();
 function renderRepos() {
   const repos = S.repos || [], team = S.sharing;
+  const focused = $("#repoList").contains(document.activeElement) && document.activeElement.getAttribute("aria-label");
   $$(".if-team").forEach(e => e.hidden = !team);
   if (!repos.length) { $("#repoList").replaceChildren(h("span", {class: "count"}, "No repos yet.")); return; }
-  const saved = async (e, call) => busy(e.target, async () => { await call(); toast("Saved ✓"); PREV.clear(); rSig = ""; await load(); });
+  // reload on failure too, so a switch always shows what is stored; focus stays on it
+  const saved = (e, call) => { const label = e.target.getAttribute("aria-label");
+    return busy(e.target, async () => {
+      try { await call(); toast("Saved ✓"); PREV.clear(); rSig = ""; }
+      finally { await load().catch(() => {}); focusRepo(label); }
+    }); };
   const option = (r, opt, label) => h("input", {type: "checkbox", class: "switch", checked: r[opt], "aria-label": label + " " + r.repo,
     onchange: e => saved(e, () => api("set_repo_option", {repo: r.repo, option: opt, on: e.target.checked}))});
   const where = r => !r.photos ? "no photos" : !r.share ? "stays on this computer" : r.show == null ? "name not asked yet"
@@ -1035,6 +1042,7 @@ function renderRepos() {
         onchange: e => saved(e, () => api("set_repo_choice", {repo: r.repo, show: e.target.checked}))}),
     ]));
   $("#repoList").replaceChildren(grid);
+  focusRepo(focused);   // a background reload must not drop keyboard focus
 }
 async function renderFolders() {
   const f = await api("folders").catch(() => []);
@@ -1142,6 +1150,7 @@ document.addEventListener("click", e => {
   if (act === "setup-team" || act === "relogin") openWizard("team", true);
   if (act === "wizard") openWizard("welcome");
   if (act === "privacy-doc") openPrivacy();
+  if (act === "go-team") route("team");
 });
 
 // ------------------------------------------------------------------ review (hot or not)
@@ -1517,7 +1526,7 @@ function route(to) {
   const el = anchor && document.getElementById(anchor);
   if (el) requestAnimationFrame(() => el.scrollIntoView({block: "start"})); else window.scrollTo(0, 0);
   if (view === "team") loadTeam("auto", $("#syncBtn"));
-  if (view === "review" && !teamFetched && S.sharing) { teamFetched = true; teamRefresh().then(() => { rSig = ""; renderReview(); }); }
+  if (view === "review" && !teamFetched && S.sharing) teamRefresh().then(() => { teamFetched = true; rSig = ""; renderReview(); }).catch(() => {});   // failed: next visit tries again
 }
 let teamFetched = false;
 $$("nav a").forEach(a => a.onclick = () => route(a.dataset.v));

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2
+
+- **"See the team gallery" works:** the button under "all caught up" in Review did nothing.
+- **Auto-share works in new repos:** it failed for a repo whose name nobody had been asked about yet.
+- **Settings › Repos:** a switch flips back if saving fails, and keyboard focus stays on it.
+- **Fewer Drive calls when removing pictures:** unshare and expiry no longer try up to three times to delete a file that isn't there.
+- **Menu bar icon no longer flickers** while a photo is taken.
+
 ## 0.6.1
 
 - **Settings › Repos works again:** the list of repos showed "[object HTMLSpanElement]" text instead of names and switches.

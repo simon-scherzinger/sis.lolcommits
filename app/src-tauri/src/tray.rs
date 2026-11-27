@@ -5,7 +5,7 @@ use crate::{config, share, store, time, update};
 use image::{Rgba, RgbaImage};
 use imageproc::drawing::{draw_filled_circle_mut, draw_filled_rect_mut, draw_line_segment_mut};
 use imageproc::rect::Rect;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 use tauri::image::Image;
@@ -18,6 +18,9 @@ const INK: Rgba<u8> = Rgba([0, 0, 0, 255]);
 const CLEAR: Rgba<u8> = Rgba([0, 0, 0, 0]);
 
 pub static ANIMATING: AtomicBool = AtomicBool::new(false);
+/// Bumped on every start, so a thread left over from a previous photo stops
+/// instead of drawing over the new one.
+static RUN: AtomicU64 = AtomicU64::new(0);
 pub static LAST_ERROR: Mutex<Option<String>> = Mutex::new(None);
 
 fn rounded_rect(img: &mut RgbaImage, x0: i32, y0: i32, x1: i32, y1: i32, r: i32, c: Rgba<u8>) {
@@ -76,9 +79,10 @@ pub fn idle_icon() -> Image<'static> {
     draw(5, 0, paused, err && !paused)
 }
 
+// One call: set_icon alone shows the image as non-template (black) until
+// set_icon_as_template follows, which flickers on every animation frame.
 fn set_icon(tray: &TrayIcon<Wry>, img: Image<'static>) {
-    let _ = tray.set_icon(Some(img));
-    let _ = tray.set_icon_as_template(true);
+    let _ = tray.set_icon_with_as_template(Some(img), true);
 }
 
 /// Shutter animation until stop_animation().
@@ -86,11 +90,13 @@ pub fn start_animation(app: &AppHandle) {
     if ANIMATING.swap(true, Ordering::SeqCst) {
         return;
     }
+    let run = RUN.fetch_add(1, Ordering::SeqCst) + 1;
     let app = app.clone();
     std::thread::spawn(move || {
         let frames = [(5, 0), (3, 1), (1, 2), (0, 2), (1, 2), (3, 1)];
         let mut i = 0;
-        while ANIMATING.load(Ordering::SeqCst) {
+        let mine = || ANIMATING.load(Ordering::SeqCst) && RUN.load(Ordering::SeqCst) == run;
+        while mine() {
             if let Some(tray) = app.tray_by_id("main") {
                 let (lens, flash) = frames[i % frames.len()];
                 set_icon(&tray, draw(lens, flash, false, false));
@@ -98,7 +104,9 @@ pub fn start_animation(app: &AppHandle) {
             i += 1;
             std::thread::sleep(Duration::from_millis(110));
         }
-        refresh(&app);
+        if RUN.load(Ordering::SeqCst) == run {
+            refresh(&app);
+        }
     });
 }
 
